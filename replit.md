@@ -4,6 +4,14 @@
 
 The West African Design Forum platform is a full-stack event management system for a premier design conference. It serves as the central digital hub for WADF 2025, enabling attendees to purchase tickets, speakers to submit proposals, sponsors to register, and organizers to manage the entire event lifecycle. The platform combines modern web technologies with a culturally-resonant design system inspired by contemporary African design leaders.
 
+**Current Status (Updated October 16, 2025):**
+- ✅ Core MVP features operational with PostgreSQL database
+- ✅ Paystack payment integration for tickets and sponsorships
+- ✅ Admin dashboard with proposal management workflow
+- ✅ Session attendance tracking and rating system
+- ✅ Certificate generation with PDF download (jsPDF + html2canvas)
+- 🚧 PWA, networking, and advanced features in backlog
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -31,8 +39,16 @@ The application implements a custom design system based on "Modern Africana with
 **Component Structure:**
 - Modular UI components in `/client/src/components/ui`
 - Page-level components in `/client/src/pages`
-- Shared layout component for consistent navigation and footer
+- Shared layout component for consistent navigation and footer with user dropdown menu
 - Context-based authentication state management
+
+**Key Features:**
+- **Certificate Generation:** Client-side PDF generation using jsPDF and html2canvas
+  - Personalized certificates with WADF branding and Playfair Display typography
+  - Displays user name, sessions attended count, and list of attended sessions
+  - Professional design with double border, gradient accents, and cultural aesthetics
+  - Automatic download functionality with unique filename per user
+  - Database record creation for certificate issuance tracking
 
 ### Backend Architecture
 
