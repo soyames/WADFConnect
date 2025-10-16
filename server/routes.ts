@@ -659,8 +659,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/admin/team-members/invite", requireAdmin, async (req, res) => {
+    try {
+      const { email, name, role, invitationMessage } = req.body;
+      const userId = req.headers['x-user-id'] as string;
+      
+      if (!email || !name || !role) {
+        return res.status(400).json({ error: "Email, name, and role are required" });
+      }
+
+      const teamMember = await storage.createTeamMember({
+        email,
+        name,
+        role,
+        invitedBy: userId,
+        status: "invited"
+      });
+
+      // In a real application, you would send an email here with the invitationMessage
+      // For now, we just log it to simulate the invitation being sent
+      console.log(`Invitation sent to ${email}:`, invitationMessage || "You've been invited to join the team!");
+
+      res.json(teamMember);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   app.patch("/api/admin/team-members/:id", requireAdmin, async (req, res) => {
     const teamMember = await storage.updateTeamMember(req.params.id, req.body);
+    if (!teamMember) {
+      return res.status(404).json({ error: "Team member not found" });
+    }
+    res.json(teamMember);
+  });
+
+  app.patch("/api/admin/team-members/:id/status", requireAdmin, async (req, res) => {
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ error: "Status is required" });
+    }
+    const teamMember = await storage.updateTeamMember(req.params.id, { status });
     if (!teamMember) {
       return res.status(404).json({ error: "Team member not found" });
     }

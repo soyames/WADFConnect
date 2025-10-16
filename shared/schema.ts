@@ -410,7 +410,7 @@ export const teamMembers = pgTable("team_members", {
   invitedAt: timestamp("invited_at").defaultNow().notNull(),
   joinedAt: timestamp("joined_at"),
   userId: varchar("user_id").references(() => users.id), // links to users table when they accept invite
-  status: text("status").notNull().default("pending"), // pending, active, inactive
+  status: text("status").notNull().default("invited"), // invited, active, inactive
 });
 
 export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({

@@ -407,6 +407,9 @@ function ProposalEvaluationsSection() {
     queryKey: ["/api/admin/team-members"]
   });
 
+  // Filter team members with role "evaluator" to show as available evaluators
+  const evaluatorTeamMembers = teamMembers.filter(member => member.role === "evaluator" && member.status === "active");
+
   const { data: allEvaluations = [] } = useQuery<ProposalEvaluation[]>({
     queryKey: ["/api/evaluations"],
     queryFn: async () => {
@@ -590,31 +593,41 @@ function ProposalEvaluationsSection() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {evaluators.map((evaluator) => {
-              const member = teamMembers.find(m => m.id === evaluator.teamMemberId);
-              return (
-                <div key={evaluator.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={evaluator.id}
-                    checked={selectedEvaluators.includes(evaluator.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedEvaluators([...selectedEvaluators, evaluator.id]);
-                      } else {
-                        setSelectedEvaluators(selectedEvaluators.filter(id => id !== evaluator.id));
-                      }
-                    }}
-                    data-testid={`checkbox-evaluator-${evaluator.id}`}
-                  />
-                  <Label htmlFor={evaluator.id} className="flex-1 cursor-pointer">
-                    <div className="font-medium">{member?.name || "Unknown"}</div>
-                    {evaluator.expertise && (
-                      <div className="text-sm text-muted-foreground">{evaluator.expertise}</div>
-                    )}
-                  </Label>
-                </div>
-              );
-            })}
+            {evaluatorTeamMembers.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">
+                <p className="text-sm">No active evaluators available.</p>
+                <p className="text-xs mt-2">Add team members with "evaluator" role to assign them to proposals.</p>
+              </div>
+            ) : (
+              evaluatorTeamMembers.map((member) => {
+                const evaluator = evaluators.find(e => e.teamMemberId === member.id);
+                const evaluatorId = evaluator?.id || member.id;
+                
+                return (
+                  <div key={member.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={evaluatorId}
+                      checked={selectedEvaluators.includes(evaluatorId)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedEvaluators([...selectedEvaluators, evaluatorId]);
+                        } else {
+                          setSelectedEvaluators(selectedEvaluators.filter(id => id !== evaluatorId));
+                        }
+                      }}
+                      data-testid={`checkbox-evaluator-${member.id}`}
+                    />
+                    <Label htmlFor={evaluatorId} className="flex-1 cursor-pointer">
+                      <div className="font-medium">{member.name}</div>
+                      <div className="text-sm text-muted-foreground">{member.email}</div>
+                      {evaluator?.expertise && (
+                        <div className="text-xs text-muted-foreground mt-1">Expertise: {evaluator.expertise}</div>
+                      )}
+                    </Label>
+                  </div>
+                );
+              })
+            )}
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button
@@ -1846,6 +1859,11 @@ function UsersSection() {
 // Team Members Section
 function TeamMembersSection({ userId }: { userId: string }) {
   const { toast } = useToast();
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+
   const { data: teamMembers = [], isLoading } = useQuery<TeamMember[]>({
     queryKey: ["/api/admin/team-members"],
     queryFn: async () => {
@@ -1857,6 +1875,108 @@ function TeamMembersSection({ userId }: { userId: string }) {
     }
   });
 
+  const inviteFormSchema = z.object({
+    email: z.string().email("Invalid email address"),
+    name: z.string().min(1, "Name is required"),
+    role: z.string().min(1, "Role is required"),
+    invitationMessage: z.string().optional(),
+  });
+
+  const editFormSchema = z.object({
+    role: z.string().min(1, "Role is required"),
+    status: z.string().min(1, "Status is required"),
+  });
+
+  const inviteForm = useForm<z.infer<typeof inviteFormSchema>>({
+    resolver: zodResolver(inviteFormSchema),
+    defaultValues: {
+      email: "",
+      name: "",
+      role: "",
+      invitationMessage: "You've been invited to join the West African Design Forum team! We're excited to have you collaborate with us.",
+    },
+  });
+
+  const editForm = useForm<z.infer<typeof editFormSchema>>({
+    resolver: zodResolver(editFormSchema),
+    defaultValues: {
+      role: "",
+      status: "",
+    },
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof inviteFormSchema>) => {
+      return await apiRequest("POST", "/api/admin/team-members/invite", data, getAdminHeaders(userId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/team-members"] });
+      toast({ title: "Team member invited successfully" });
+      setInviteDialogOpen(false);
+      inviteForm.reset();
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to invite team member", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: z.infer<typeof editFormSchema> }) => {
+      return await apiRequest("PATCH", `/api/admin/team-members/${id}`, data, getAdminHeaders(userId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/team-members"] });
+      toast({ title: "Team member updated successfully" });
+      setEditDialogOpen(false);
+      setSelectedMember(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update team member", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/admin/team-members/${id}`, undefined, getAdminHeaders(userId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/team-members"] });
+      toast({ title: "Team member removed successfully" });
+      setDeleteDialogOpen(false);
+      setSelectedMember(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to remove team member", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleEdit = (member: TeamMember) => {
+    setSelectedMember(member);
+    editForm.reset({
+      role: member.role,
+      status: member.status,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleDelete = (member: TeamMember) => {
+    setSelectedMember(member);
+    setDeleteDialogOpen(true);
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "active":
+        return "default";
+      case "invited":
+        return "secondary";
+      case "inactive":
+        return "outline";
+      default:
+        return "outline";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -1864,10 +1984,109 @@ function TeamMembersSection({ userId }: { userId: string }) {
           <h2 className="text-3xl font-bold font-serif mb-2">Team Members</h2>
           <p className="text-muted-foreground">Manage organizers and evaluators</p>
         </div>
-        <Button data-testid="button-add-team-member">
-          <Plus className="h-4 w-4 mr-2" />
-          Invite Team Member
-        </Button>
+        <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-invite-team-member">
+              <Plus className="h-4 w-4 mr-2" />
+              Invite Member
+            </Button>
+          </DialogTrigger>
+          <DialogContent data-testid="dialog-invite-team-member">
+            <DialogHeader>
+              <DialogTitle>Invite Team Member</DialogTitle>
+              <DialogDescription>
+                Send an invitation to a new team member
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...inviteForm}>
+              <form onSubmit={inviteForm.handleSubmit((data) => inviteMutation.mutate(data))} className="space-y-4">
+                <FormField
+                  control={inviteForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="member@example.com" {...field} data-testid="input-invite-email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={inviteForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} data-testid="input-invite-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={inviteForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-invite-role">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="organizer">Organizer</SelectItem>
+                          <SelectItem value="evaluator">Evaluator</SelectItem>
+                          <SelectItem value="volunteer">Volunteer</SelectItem>
+                          <SelectItem value="content-manager">Content Manager</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={inviteForm.control}
+                  name="invitationMessage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invitation Message (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Custom invitation message..." 
+                          {...field} 
+                          rows={4}
+                          data-testid="textarea-invite-message" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={inviteMutation.isPending}
+                  data-testid="button-send-invitation"
+                >
+                  {inviteMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Send Invitation"
+                  )}
+                </Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -1885,15 +2104,40 @@ function TeamMembersSection({ userId }: { userId: string }) {
             <div className="space-y-4">
               {teamMembers.map((member) => (
                 <div key={member.id} className="border rounded-lg p-4" data-testid={`team-member-${member.id}`}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold">{member.name}</h3>
-                      <p className="text-sm text-muted-foreground">{member.email}</p>
-                      <Badge className="mt-2" variant="secondary">{member.role}</Badge>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold" data-testid={`text-member-name-${member.id}`}>{member.name}</h3>
+                      <p className="text-sm text-muted-foreground" data-testid={`text-member-email-${member.id}`}>{member.email}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="secondary" data-testid={`badge-member-role-${member.id}`}>{member.role}</Badge>
+                        <Badge variant={getStatusBadgeVariant(member.status)} data-testid={`badge-member-status-${member.id}`}>
+                          {member.status}
+                        </Badge>
+                      </div>
+                      {member.invitedAt && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Invited {new Date(member.invitedAt).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
-                    <Badge variant={member.status === "active" ? "default" : "outline"}>
-                      {member.status}
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(member)}
+                        data-testid={`button-edit-member-${member.id}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(member)}
+                        data-testid={`button-delete-member-${member.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1901,6 +2145,103 @@ function TeamMembersSection({ userId }: { userId: string }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent data-testid="dialog-edit-team-member">
+          <DialogHeader>
+            <DialogTitle>Edit Team Member</DialogTitle>
+            <DialogDescription>
+              Update role and status for {selectedMember?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit((data) => selectedMember && updateMutation.mutate({ id: selectedMember.id, data }))} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-edit-role">
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="organizer">Organizer</SelectItem>
+                        <SelectItem value="evaluator">Evaluator</SelectItem>
+                        <SelectItem value="volunteer">Volunteer</SelectItem>
+                        <SelectItem value="content-manager">Content Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-edit-status">
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="invited">Invited</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={updateMutation.isPending}
+                data-testid="button-save-member"
+              >
+                {updateMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete-team-member">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {selectedMember?.name} from the team? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-member">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedMember && deleteMutation.mutate(selectedMember.id)}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete-member"
+            >
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
