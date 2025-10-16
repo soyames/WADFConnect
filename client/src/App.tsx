@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
+import InstallPrompt from "@/components/InstallPrompt";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
@@ -45,6 +46,7 @@ function App() {
           <Layout>
             <Router />
           </Layout>
+          <InstallPrompt />
           <Toaster />
         </TooltipProvider>
       </AuthProvider>
