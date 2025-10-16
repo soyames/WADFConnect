@@ -65,19 +65,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, name: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    
-    // Create user record in backend
-    await fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        name,
-        firebaseUid: userCredential.user.uid,
-        role: "attendee"
-      }),
-    });
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Create user record in backend
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name,
+          firebaseUid: userCredential.user.uid,
+          role: "attendee"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create user record");
+      }
+
+      // Fetch the created user data
+      const createdUser = await response.json();
+      setUserData(createdUser);
+    } catch (error: any) {
+      // Provide helpful error messages
+      if (error.code === "auth/email-already-in-use") {
+        throw new Error("This email is already registered. Please sign in instead.");
+      } else if (error.code === "auth/configuration-not-found") {
+        throw new Error("Authentication is not configured. Please contact support or try again later.");
+      } else if (error.code === "auth/weak-password") {
+        throw new Error("Password should be at least 6 characters.");
+      } else if (error.code === "auth/invalid-email") {
+        throw new Error("Invalid email address.");
+      } else {
+        throw new Error(error.message || "Failed to create account. Please try again.");
+      }
+    }
   };
 
   const signOut = async () => {
