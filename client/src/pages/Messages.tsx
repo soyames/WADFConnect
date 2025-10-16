@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import type { Conversation, Message, User } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 
 export default function Messages() {
+  const { t } = useTranslation();
   const { userData } = useAuth();
   const { toast } = useToast();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export default function Messages() {
     },
     onError: () => {
       toast({
-        title: "Error",
+        title: t('common.error'),
         description: "Failed to send message.",
         variant: "destructive",
       });
@@ -90,9 +92,9 @@ export default function Messages() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold mb-2">Messages</h1>
+          <h1 className="text-3xl font-serif font-bold mb-2">{t('messages.title')}</h1>
           <p className="text-muted-foreground">
-            Chat with your connections
+            {t('messages.subtitle')}
           </p>
         </div>
 
@@ -100,7 +102,7 @@ export default function Messages() {
           {/* Conversations List */}
           <Card className="lg:col-span-1">
             <CardHeader className="border-b">
-              <h2 className="font-semibold">Conversations</h2>
+              <h2 className="font-semibold">{t('messages.conversations')}</h2>
             </CardHeader>
             <ScrollArea className="h-[calc(100%-5rem)]">
               <div className="p-4 space-y-2">
@@ -108,7 +110,7 @@ export default function Messages() {
                   <div className="text-center py-8">
                     <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                     <p className="text-sm text-muted-foreground">
-                      No conversations yet
+                      {t('messages.noConversations')}
                     </p>
                   </div>
                 ) : (
@@ -209,7 +211,7 @@ export default function Messages() {
                 <CardContent className="border-t pt-4">
                   <form onSubmit={handleSendMessage} className="flex gap-2">
                     <Input
-                      placeholder="Type a message..."
+                      placeholder={t('messages.typeMessage')}
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
                       data-testid="input-message"
@@ -230,7 +232,7 @@ export default function Messages() {
                 <div className="text-center">
                   <MessageSquare className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">
-                    Select a conversation to start messaging
+                    {t('messages.selectConversationDescription')}
                   </p>
                 </div>
               </div>

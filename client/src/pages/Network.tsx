@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { User, Connection } from "@shared/schema";
 
 export default function Network() {
+  const { t } = useTranslation("network");
   const { userData } = useAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,14 +46,14 @@ export default function Network() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/connections"] });
       toast({
-        title: "Connection request sent",
-        description: "Your request has been sent successfully.",
+        title: t("connectionRequestSent"),
+        description: t("requestSentSuccessfully"),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to send connection request.",
+        title: t("error"),
+        description: t("failedToSendRequest"),
         variant: "destructive",
       });
     },
@@ -64,8 +66,8 @@ export default function Network() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/connections"] });
       toast({
-        title: "Connection updated",
-        description: "Connection status has been updated.",
+        title: t("connectionUpdated"),
+        description: t("connectionStatusUpdated"),
       });
     },
   });
@@ -120,9 +122,9 @@ export default function Network() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold mb-2">Networking Hub</h1>
+          <h1 className="text-3xl font-serif font-bold mb-2">{t("title")}</h1>
           <p className="text-muted-foreground">
-            Connect with fellow attendees, speakers, and sponsors
+            {t("subtitle")}
           </p>
         </div>
 
@@ -130,15 +132,15 @@ export default function Network() {
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="discover" data-testid="tab-discover">
               <Search className="h-4 w-4 mr-2" />
-              Discover
+              {t("tabDiscover")}
             </TabsTrigger>
             <TabsTrigger value="connections" data-testid="tab-connections">
               <Users className="h-4 w-4 mr-2" />
-              Connections ({connectedUsers.length})
+              {t("tabConnections")} ({connectedUsers.length})
             </TabsTrigger>
             <TabsTrigger value="requests" data-testid="tab-requests">
               <UserPlus className="h-4 w-4 mr-2" />
-              Requests ({receivedRequests.length})
+              {t("tabRequests")} ({receivedRequests.length})
             </TabsTrigger>
           </TabsList>
 
@@ -147,7 +149,7 @@ export default function Network() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email, or company..."
+                  placeholder={t("searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -156,14 +158,14 @@ export default function Network() {
               </div>
               <Select value={roleFilter} onValueChange={setRoleFilter}>
                 <SelectTrigger className="w-full sm:w-48" data-testid="select-role-filter">
-                  <SelectValue placeholder="Filter by role" />
+                  <SelectValue placeholder={t("filterByRole")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="attendee">Attendee</SelectItem>
-                  <SelectItem value="speaker">Speaker</SelectItem>
-                  <SelectItem value="sponsor">Sponsor</SelectItem>
-                  <SelectItem value="organizer">Organizer</SelectItem>
+                  <SelectItem value="all">{t("allRoles")}</SelectItem>
+                  <SelectItem value="attendee">{t("attendee")}</SelectItem>
+                  <SelectItem value="speaker">{t("speaker")}</SelectItem>
+                  <SelectItem value="sponsor">{t("sponsor")}</SelectItem>
+                  <SelectItem value="organizer">{t("organizer")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -200,7 +202,7 @@ export default function Network() {
                           data-testid={`button-message-${user.id}`}
                         >
                           <MessageSquare className="h-4 w-4 mr-2" />
-                          Message
+                          {t("message")}
                         </Button>
                       ) : isPending ? (
                         <Button 
@@ -209,7 +211,7 @@ export default function Network() {
                           disabled
                           data-testid={`button-pending-${user.id}`}
                         >
-                          {isSentByMe ? "Request Sent" : "Request Received"}
+                          {isSentByMe ? t("requestSent") : t("requestReceived")}
                         </Button>
                       ) : (
                         <Button
@@ -219,7 +221,7 @@ export default function Network() {
                           data-testid={`button-connect-${user.id}`}
                         >
                           <UserPlus className="h-4 w-4 mr-2" />
-                          Connect
+                          {t("connect")}
                         </Button>
                       )}
                     </CardContent>
@@ -230,7 +232,7 @@ export default function Network() {
 
             {filteredUsers.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No users found</p>
+                <p className="text-muted-foreground">{t("noUsers")}</p>
               </div>
             )}
           </TabsContent>
@@ -260,7 +262,7 @@ export default function Network() {
                       data-testid={`button-message-connected-${user.id}`}
                     >
                       <MessageSquare className="h-4 w-4 mr-2" />
-                      Message
+                      {t("message")}
                     </Button>
                   </CardContent>
                 </Card>
@@ -269,7 +271,7 @@ export default function Network() {
 
             {connectedUsers.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No connections yet</p>
+                <p className="text-muted-foreground">{t("noConnections")}</p>
               </div>
             )}
           </TabsContent>
@@ -310,7 +312,7 @@ export default function Network() {
                           data-testid={`button-accept-${request.id}`}
                         >
                           <Check className="h-4 w-4 mr-2" />
-                          Accept
+                          {t("accept")}
                         </Button>
                         <Button
                           className="flex-1"
@@ -325,7 +327,7 @@ export default function Network() {
                           data-testid={`button-reject-${request.id}`}
                         >
                           <X className="h-4 w-4 mr-2" />
-                          Decline
+                          {t("decline")}
                         </Button>
                       </div>
                     </CardContent>
@@ -336,7 +338,7 @@ export default function Network() {
 
             {receivedRequests.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No pending requests</p>
+                <p className="text-muted-foreground">{t("noPendingRequests")}</p>
               </div>
             )}
           </TabsContent>

@@ -185,18 +185,33 @@
     "generating": "Generating certificate..."
   },
   "network": {
-    "title": "Network",
-    "subtitle": "Connect with fellow attendees and expand your professional network",
-    "searchPlaceholder": "Search attendees...",
-    "allAttendees": "All Attendees",
-    "myConnections": "My Connections",
+    "title": "Networking Hub",
+    "subtitle": "Connect with fellow attendees, speakers, and sponsors",
+    "tabDiscover": "Discover",
+    "tabConnections": "Connections",
+    "tabRequests": "Requests",
+    "searchPlaceholder": "Search by name, email, or company...",
+    "filterByRole": "Filter by role",
+    "allRoles": "All Roles",
+    "attendee": "Attendee",
+    "speaker": "Speaker",
+    "sponsor": "Sponsor",
+    "organizer": "Organizer",
+    "message": "Message",
     "connect": "Connect",
-    "pending": "Pending",
-    "connected": "Connected",
-    "viewProfile": "View Profile",
-    "sendMessage": "Send Message",
-    "noUsers": "No attendees found",
-    "noUsersDescription": "Try adjusting your search or check back later"
+    "requestSent": "Request Sent",
+    "requestReceived": "Request Received",
+    "noUsers": "No users found",
+    "noConnections": "No connections yet",
+    "noPendingRequests": "No pending requests",
+    "accept": "Accept",
+    "decline": "Decline",
+    "connectionRequestSent": "Connection request sent",
+    "requestSentSuccessfully": "Your request has been sent successfully.",
+    "error": "Error",
+    "failedToSendRequest": "Failed to send connection request.",
+    "connectionUpdated": "Connection updated",
+    "connectionStatusUpdated": "Connection status has been updated."
   },
   "messages": {
     "title": "Messages",
@@ -258,8 +273,58 @@
     "completion": "Completion %"
   },
   "faq": {
-    "title": "Frequently Asked Questions",
-    "subtitle": "Find answers to common questions about WADF 2025"
+    "badge": "Help Center",
+    "pageTitle": "Frequently Asked",
+    "pageTitleHighlight": "Questions",
+    "subtitle": "Find answers to common questions about WADF 2025",
+    "general": {
+      "title": "General",
+      "q1": "What is the West African Design Forum?",
+      "a1": "WADF is the premier event celebrating and elevating West Africa's creative industry. It's a multi-day conference bringing together designers, innovators, and industry experts from across the region and beyond.",
+      "q2": "When and where is WADF 2025?",
+      "a2": "WADF 2025 will take place June 15-17, 2025 at the Eko Convention Centre in Lagos, Nigeria.",
+      "q3": "Who should attend WADF?",
+      "a3": "WADF is perfect for designers, product managers, creative professionals, entrepreneurs, students, and anyone interested in West Africa's creative economy and innovation landscape."
+    },
+    "tickets": {
+      "title": "Tickets",
+      "q1": "How do I purchase a ticket?",
+      "a1": "Simply visit the Tickets page, select your preferred pass (Early Bird, Regular, or VIP), and complete the secure checkout process. Your account will be automatically created upon successful payment.",
+      "q2": "What's included in each ticket type?",
+      "a2": "All tickets include full conference access, sessions, workshops, networking events, and a digital certificate. VIP passes add exclusive benefits like lounge access, priority seating, speaker meet & greets, and premium swag.",
+      "q3": "Can I get a refund?",
+      "a3": "Tickets are generally non-refundable. However, we offer ticket transfers if you can't attend. Contact our support team for special circumstances.",
+      "q4": "What payment methods do you accept?",
+      "a4": "We accept all major credit/debit cards and mobile money through our secure payment partners Paystack and Flutterwave."
+    },
+    "speakers": {
+      "title": "Speakers",
+      "q1": "How do I submit a session proposal?",
+      "a1": "Visit the Call for Proposals page, sign in or create an account, and complete the submission form with your session details. Our team will review all proposals and notify you of the decision.",
+      "q2": "What makes a good proposal?",
+      "a2": "Strong proposals are specific, actionable, and relevant to our audience. Focus on clear learning outcomes, practical insights, and how your session will benefit attendees. Original content and diverse perspectives are highly valued.",
+      "q3": "When is the CFP deadline?",
+      "a3": "The Call for Proposals closes on March 31, 2025. Decisions will be communicated within 2 weeks of submission.",
+      "q4": "Do speakers get free tickets?",
+      "a4": "Yes! Accepted speakers receive a complimentary conference pass and recognition in our speaker community."
+    },
+    "sponsors": {
+      "title": "Sponsors",
+      "q1": "How can my company sponsor WADF?",
+      "a1": "Visit the Sponsors page to explore our partnership packages ranging from Supporter (€50) to Diamond (€5,000). Each tier offers different benefits including brand visibility, speaking opportunities, and delegate passes.",
+      "q2": "What are the sponsorship benefits?",
+      "a2": "Benefits vary by tier and include logo placement, social media promotion, booth space, speaking slots, delegate passes, and email list access. Diamond sponsors receive custom benefits packages.",
+      "q3": "Can I customize my sponsorship package?",
+      "a3": "Absolutely! For Gold and Diamond tiers, we're happy to discuss custom packages that align with your specific goals. Contact our partnerships team after selecting a tier."
+    },
+    "contact": {
+      "title": "Still have questions?",
+      "description": "Can't find the answer you're looking for? Our team is here to help.",
+      "email": "Email:",
+      "emailAddress": "hello@wadf.org",
+      "responseTime": "Response time:",
+      "responseTimeValue": "Within 24 hours"
+    }
   },
   "admin": {
     "title": "Admin Dashboard",

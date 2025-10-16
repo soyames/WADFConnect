@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -22,6 +23,7 @@ import type { RevenueSnapshot, EngagementMetric, SponsorMetric, SessionMetric } 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export default function Analytics() {
+  const { t } = useTranslation('analytics');
   const { data: revenueData, isLoading: isLoadingRevenue } = useQuery<RevenueSnapshot[]>({
     queryKey: ["/api/analytics/revenue"],
   });
@@ -46,20 +48,20 @@ export default function Analytics() {
 
   // Prepare chart data
   const ticketTypeData = revenueData && revenueData.length > 0 ? [
-    { name: "Early Bird", value: revenueData.reduce((sum, s) => sum + s.earlyBirdSold, 0) },
-    { name: "Regular", value: revenueData.reduce((sum, s) => sum + s.regularSold, 0) },
-    { name: "VIP", value: revenueData.reduce((sum, s) => sum + s.vipSold, 0) },
+    { name: t('earlyBird'), value: revenueData.reduce((sum, s) => sum + s.earlyBirdSold, 0) },
+    { name: t('regular'), value: revenueData.reduce((sum, s) => sum + s.regularSold, 0) },
+    { name: t('vip'), value: revenueData.reduce((sum, s) => sum + s.vipSold, 0) },
   ] : [];
 
   return (
     <div className="min-h-screen py-16">
       <div className="container mx-auto max-w-7xl px-4">
         <div className="mb-12">
-          <h1 className="font-serif text-5xl md:text-6xl font-bold mb-4">
-            Analytics <span className="text-primary">Dashboard</span>
+          <h1 className="font-serif text-5xl md:text-6xl font-bold mb-4" data-testid="text-analytics-title">
+            {t('title')}
           </h1>
           <p className="text-lg text-muted-foreground">
-            Comprehensive insights into revenue, engagement, and performance metrics.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -67,52 +69,52 @@ export default function Analytics() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('totalRevenue')}</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">€{(totalRevenue / 100).toLocaleString()}</div>
+              <div className="text-2xl font-bold" data-testid="text-total-revenue">€{(totalRevenue / 100).toLocaleString()}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                From tickets and sponsorships
+                {t('totalRevenueDescription')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tickets Sold</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('ticketsSold')}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalTickets}</div>
+              <div className="text-2xl font-bold" data-testid="text-tickets-sold">{totalTickets}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Total attendee registrations
+                {t('ticketsSoldDescription')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sponsors</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('sponsors')}</CardTitle>
               <Award className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalSponsors}</div>
+              <div className="text-2xl font-bold" data-testid="text-total-sponsors">{totalSponsors}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Active sponsorship partners
+                {t('sponsorsDescription')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Session Attendance</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('sessionAttendance')}</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalEngagement}</div>
+              <div className="text-2xl font-bold" data-testid="text-session-attendance">{totalEngagement}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Total session check-ins
+                {t('sessionAttendanceDescription')}
               </p>
             </CardContent>
           </Card>
@@ -121,10 +123,10 @@ export default function Analytics() {
         {/* Detailed Analytics Tabs */}
         <Tabs defaultValue="revenue" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 max-w-2xl">
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="engagement">Engagement</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="sponsors">Sponsors</TabsTrigger>
+            <TabsTrigger value="revenue" data-testid="tab-revenue">{t('revenueTab')}</TabsTrigger>
+            <TabsTrigger value="engagement" data-testid="tab-engagement">{t('engagementTab')}</TabsTrigger>
+            <TabsTrigger value="sessions" data-testid="tab-sessions">{t('sessionsTab')}</TabsTrigger>
+            <TabsTrigger value="sponsors" data-testid="tab-sponsors">{t('sponsorsTab')}</TabsTrigger>
           </TabsList>
 
           {/* Revenue Analytics */}
@@ -132,8 +134,8 @@ export default function Analytics() {
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Revenue Trend</CardTitle>
-                  <CardDescription>Daily revenue over time</CardDescription>
+                  <CardTitle>{t('revenueTrend')}</CardTitle>
+                  <CardDescription>{t('revenueTrendDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isLoadingRevenue ? (
@@ -154,14 +156,14 @@ export default function Analytics() {
                           labelFormatter={(label) => new Date(label).toLocaleDateString()}
                         />
                         <Legend />
-                        <Line type="monotone" dataKey="totalRevenue" stroke={COLORS[0]} name="Total Revenue" />
+                        <Line type="monotone" dataKey="totalRevenue" stroke={COLORS[0]} name={t('totalRevenue')} />
                         <Line type="monotone" dataKey="ticketRevenue" stroke={COLORS[1]} name="Ticket Revenue" />
                         <Line type="monotone" dataKey="sponsorshipRevenue" stroke={COLORS[2]} name="Sponsorship Revenue" />
                       </LineChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                      No revenue data available
+                      {t('noRevenueData')}
                     </div>
                   )}
                 </CardContent>
@@ -169,8 +171,8 @@ export default function Analytics() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Ticket Sales by Type</CardTitle>
-                  <CardDescription>Distribution of ticket purchases</CardDescription>
+                  <CardTitle>{t('ticketSalesByType')}</CardTitle>
+                  <CardDescription>{t('ticketSalesByTypeDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isLoadingRevenue ? (
@@ -199,7 +201,7 @@ export default function Analytics() {
                     </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                      No ticket data available
+                      {t('noRevenueData')}
                     </div>
                   )}
                 </CardContent>
@@ -211,8 +213,8 @@ export default function Analytics() {
           <TabsContent value="engagement" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Engagement Metrics Over Time</CardTitle>
-                <CardDescription>User activity and session participation</CardDescription>
+                <CardTitle>{t('engagementMetrics')}</CardTitle>
+                <CardDescription>{t('engagementMetricsDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingEngagement ? (
@@ -230,15 +232,15 @@ export default function Analytics() {
                       <YAxis />
                       <Tooltip labelFormatter={(label) => new Date(label).toLocaleDateString()} />
                       <Legend />
-                      <Bar dataKey="activeUsers" fill={COLORS[0]} name="Active Users" />
-                      <Bar dataKey="sessionAttendance" fill={COLORS[1]} name="Session Attendance" />
-                      <Bar dataKey="connectionsCreated" fill={COLORS[2]} name="Connections" />
-                      <Bar dataKey="messagesSent" fill={COLORS[3]} name="Messages Sent" />
+                      <Bar dataKey="activeUsers" fill={COLORS[0]} name={t('activeUsers')} />
+                      <Bar dataKey="sessionAttendance" fill={COLORS[1]} name={t('sessionAttendance')} />
+                      <Bar dataKey="connectionsCreated" fill={COLORS[2]} name={t('connections')} />
+                      <Bar dataKey="messagesSent" fill={COLORS[3]} name={t('messagesSent')} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex items-center justify-center h-[400px] text-muted-foreground">
-                    No engagement data available
+                    {t('noEngagementData')}
                   </div>
                 )}
               </CardContent>
@@ -249,8 +251,8 @@ export default function Analytics() {
           <TabsContent value="sessions" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Session Performance</CardTitle>
-                <CardDescription>Attendance and rating metrics by session</CardDescription>
+                <CardTitle>{t('sessionPerformance')}</CardTitle>
+                <CardDescription>{t('sessionPerformanceDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingSession ? (
@@ -266,9 +268,9 @@ export default function Analytics() {
                         <YAxis />
                         <Tooltip />
                         <Legend />
-                        <Bar dataKey="attendanceCount" fill={COLORS[0]} name="Attendance" />
-                        <Bar dataKey="totalRatings" fill={COLORS[1]} name="Ratings" />
-                        <Bar dataKey="engagementScore" fill={COLORS[2]} name="Engagement Score" />
+                        <Bar dataKey="attendanceCount" fill={COLORS[0]} name={t('attendance')} />
+                        <Bar dataKey="totalRatings" fill={COLORS[1]} name={t('totalRatings')} />
+                        <Bar dataKey="engagementScore" fill={COLORS[2]} name={t('engagementScore')} />
                       </BarChart>
                     </ResponsiveContainer>
 
@@ -276,11 +278,11 @@ export default function Analytics() {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b">
-                            <th className="text-left p-2">Session ID</th>
-                            <th className="text-left p-2">Attendance</th>
-                            <th className="text-left p-2">Avg Rating</th>
-                            <th className="text-left p-2">Completion %</th>
-                            <th className="text-left p-2">Engagement</th>
+                            <th className="text-left p-2">{t('sessionId')}</th>
+                            <th className="text-left p-2">{t('attendance')}</th>
+                            <th className="text-left p-2">{t('avgRating')}</th>
+                            <th className="text-left p-2">{t('completion')}</th>
+                            <th className="text-left p-2">{t('engagement')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -299,7 +301,7 @@ export default function Analytics() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-[400px] text-muted-foreground">
-                    No session metrics available
+                    {t('noSessionData')}
                   </div>
                 )}
               </CardContent>
@@ -310,8 +312,8 @@ export default function Analytics() {
           <TabsContent value="sponsors" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Sponsor ROI Metrics</CardTitle>
-                <CardDescription>Track sponsor visibility and engagement</CardDescription>
+                <CardTitle>{t('sponsorROI')}</CardTitle>
+                <CardDescription>{t('sponsorROIDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingSponsor ? (
@@ -326,15 +328,15 @@ export default function Analytics() {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="profileViews" fill={COLORS[0]} name="Profile Views" />
-                      <Bar dataKey="websiteClicks" fill={COLORS[1]} name="Website Clicks" />
-                      <Bar dataKey="logoImpressions" fill={COLORS[2]} name="Logo Impressions" />
-                      <Bar dataKey="attendeeConnections" fill={COLORS[3]} name="Connections" />
+                      <Bar dataKey="profileViews" fill={COLORS[0]} name={t('profileViews')} />
+                      <Bar dataKey="websiteClicks" fill={COLORS[1]} name={t('websiteClicks')} />
+                      <Bar dataKey="logoImpressions" fill={COLORS[2]} name={t('logoImpressions')} />
+                      <Bar dataKey="attendeeConnections" fill={COLORS[3]} name={t('connections')} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex items-center justify-center h-[400px] text-muted-foreground">
-                    No sponsor metrics available
+                    {t('noSponsorData')}
                   </div>
                 )}
               </CardContent>
