@@ -7,10 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, MapPin, Star, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { Calendar, Clock, MapPin, Star, CheckCircle2, Circle, Loader2, CalendarPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Session, Attendance } from "@shared/schema";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { downloadICS, getGoogleCalendarUrl, getOutlookCalendarUrl } from "@/utils/calendar";
 
 // Mock data for development
 const mockSessions = [
@@ -235,10 +242,43 @@ export default function Agenda() {
                           {session.speaker.name.split(" ").map(n => n[0]).join("")}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
+                      <div className="flex-1">
                         <div className="font-medium">{session.speaker.name}</div>
                         <div className="text-sm text-muted-foreground">{session.speaker.role}</div>
                       </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-2"
+                            data-testid={`button-add-calendar-${session.id}`}
+                          >
+                            <CalendarPlus className="h-4 w-4" />
+                            Add to Calendar
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={() => window.open(getGoogleCalendarUrl(session as unknown as Session), '_blank')}
+                            data-testid={`menu-google-calendar-${session.id}`}
+                          >
+                            Google Calendar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => window.open(getOutlookCalendarUrl(session as unknown as Session), '_blank')}
+                            data-testid={`menu-outlook-calendar-${session.id}`}
+                          >
+                            Outlook Calendar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => downloadICS(session as unknown as Session)}
+                            data-testid={`menu-download-ics-${session.id}`}
+                          >
+                            Download .ics File
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
