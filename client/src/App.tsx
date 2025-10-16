@@ -19,6 +19,8 @@ import FAQ from "@/pages/FAQ";
 import Admin from "@/pages/Admin";
 import PaymentCallback from "@/pages/PaymentCallback";
 import Certificate from "@/pages/Certificate";
+import Network from "@/pages/Network";
+import Messages from "@/pages/Messages";
 
 function Router() {
   return (
@@ -34,6 +36,8 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/payment/callback" component={PaymentCallback} />
       <Route path="/certificate" component={Certificate} />
+      <Route path="/network" component={Network} />
+      <Route path="/messages" component={Messages} />
       <Route component={NotFound} />
     </Switch>
   );

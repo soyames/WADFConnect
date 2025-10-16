@@ -28,6 +28,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { name: t("nav.speakers"), key: "speakers", href: "/cfp" },
     { name: t("nav.sponsors"), key: "sponsors", href: "/sponsors" },
     { name: t("nav.agenda"), key: "agenda", href: "/agenda" },
+    { name: t("nav.network"), key: "network", href: "/network" },
+    { name: t("nav.messages"), key: "messages", href: "/messages" },
     { name: t("nav.faq"), key: "faq", href: "/faq" },
   ];
 
