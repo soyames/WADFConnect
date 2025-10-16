@@ -21,6 +21,7 @@ import PaymentCallback from "@/pages/PaymentCallback";
 import Certificate from "@/pages/Certificate";
 import Network from "@/pages/Network";
 import Messages from "@/pages/Messages";
+import Analytics from "@/pages/Analytics";
 
 function Router() {
   return (
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/agenda" component={Agenda} />
       <Route path="/faq" component={FAQ} />
       <Route path="/admin" component={Admin} />
+      <Route path="/analytics" component={Analytics} />
       <Route path="/payment/callback" component={PaymentCallback} />
       <Route path="/certificate" component={Certificate} />
       <Route path="/network" component={Network} />

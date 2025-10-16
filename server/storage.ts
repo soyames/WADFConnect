@@ -23,6 +23,14 @@ import {
   type InsertConversation,
   type Message,
   type InsertMessage,
+  type RevenueSnapshot,
+  type InsertRevenueSnapshot,
+  type EngagementMetric,
+  type InsertEngagementMetric,
+  type SponsorMetric,
+  type InsertSponsorMetric,
+  type SessionMetric,
+  type InsertSessionMetric,
   users,
   tickets,
   proposals,
@@ -34,7 +42,11 @@ import {
   faqs,
   connections,
   conversations,
-  messages
+  messages,
+  revenueSnapshots,
+  engagementMetrics,
+  sponsorMetrics,
+  sessionMetrics
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, avg, count } from "drizzle-orm";
@@ -113,6 +125,17 @@ export interface IStorage {
   getConversationMessages(conversationId: string): Promise<Message[]>;
   markMessageAsRead(id: string): Promise<void>;
   getUnreadMessageCount(userId: string): Promise<number>;
+
+  // Analytics
+  getRevenueSnapshots(startDate?: Date, endDate?: Date): Promise<RevenueSnapshot[]>;
+  getLatestRevenueSnapshot(): Promise<RevenueSnapshot | undefined>;
+  getEngagementMetrics(startDate?: Date, endDate?: Date): Promise<EngagementMetric[]>;
+  getLatestEngagementMetric(): Promise<EngagementMetric | undefined>;
+  getSponsorMetrics(sponsorshipId: string): Promise<SponsorMetric[]>;
+  getAllSponsorMetrics(startDate?: Date, endDate?: Date): Promise<SponsorMetric[]>;
+  getSessionMetrics(sessionId: string): Promise<SessionMetric | undefined>;
+  getAllSessionMetrics(): Promise<SessionMetric[]>;
+  updateSessionMetrics(sessionId: string): Promise<void>;
 }
 
 export class DrizzleStorage implements IStorage {
@@ -437,6 +460,136 @@ export class DrizzleStorage implements IStorage {
     return unreadMessages.filter(m => 
       convIds.includes(m.conversationId) && m.senderId !== userId
     ).length;
+  }
+
+  // Analytics
+  async getRevenueSnapshots(startDate?: Date, endDate?: Date): Promise<RevenueSnapshot[]> {
+    let query = db.select().from(revenueSnapshots);
+    
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          eq(revenueSnapshots.date, startDate),
+          eq(revenueSnapshots.date, endDate)
+        )
+      ) as any;
+    }
+    
+    return await query;
+  }
+
+  async getLatestRevenueSnapshot(): Promise<RevenueSnapshot | undefined> {
+    const result = await db.select()
+      .from(revenueSnapshots)
+      .orderBy(revenueSnapshots.date)
+      .limit(1);
+    return result[0];
+  }
+
+  async getEngagementMetrics(startDate?: Date, endDate?: Date): Promise<EngagementMetric[]> {
+    let query = db.select().from(engagementMetrics);
+    
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          eq(engagementMetrics.date, startDate),
+          eq(engagementMetrics.date, endDate)
+        )
+      ) as any;
+    }
+    
+    return await query;
+  }
+
+  async getLatestEngagementMetric(): Promise<EngagementMetric | undefined> {
+    const result = await db.select()
+      .from(engagementMetrics)
+      .orderBy(engagementMetrics.date)
+      .limit(1);
+    return result[0];
+  }
+
+  async getSponsorMetrics(sponsorshipId: string): Promise<SponsorMetric[]> {
+    return await db.select()
+      .from(sponsorMetrics)
+      .where(eq(sponsorMetrics.sponsorshipId, sponsorshipId));
+  }
+
+  async getAllSponsorMetrics(startDate?: Date, endDate?: Date): Promise<SponsorMetric[]> {
+    let query = db.select().from(sponsorMetrics);
+    
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          eq(sponsorMetrics.date, startDate),
+          eq(sponsorMetrics.date, endDate)
+        )
+      ) as any;
+    }
+    
+    return await query;
+  }
+
+  async getSessionMetrics(sessionId: string): Promise<SessionMetric | undefined> {
+    const result = await db.select()
+      .from(sessionMetrics)
+      .where(eq(sessionMetrics.sessionId, sessionId))
+      .limit(1);
+    return result[0];
+  }
+
+  async getAllSessionMetrics(): Promise<SessionMetric[]> {
+    return await db.select().from(sessionMetrics);
+  }
+
+  async updateSessionMetrics(sessionId: string): Promise<void> {
+    // Get attendance count
+    const attendanceRecords = await db.select()
+      .from(attendance)
+      .where(eq(attendance.sessionId, sessionId));
+    const attendanceCount = attendanceRecords.length;
+
+    // Get ratings
+    const ratingRecords = await db.select()
+      .from(ratings)
+      .where(eq(ratings.sessionId, sessionId));
+    const totalRatings = ratingRecords.length;
+    const averageRating = totalRatings > 0
+      ? Math.round(ratingRecords.reduce((sum, r) => sum + r.rating, 0) / totalRatings)
+      : null;
+
+    // Calculate completion rate (percentage of attendees who rated)
+    const completionRate = attendanceCount > 0
+      ? Math.round((totalRatings / attendanceCount) * 100)
+      : 0;
+
+    // Calculate engagement score (simple formula: attendance + ratings)
+    const engagementScore = attendanceCount + totalRatings;
+
+    // Check if metrics exist
+    const existing = await this.getSessionMetrics(sessionId);
+
+    if (existing) {
+      await db.update(sessionMetrics)
+        .set({
+          attendanceCount,
+          averageRating,
+          totalRatings,
+          engagementScore,
+          completionRate,
+          updatedAt: new Date()
+        })
+        .where(eq(sessionMetrics.sessionId, sessionId));
+    } else {
+      await db.insert(sessionMetrics).values({
+        sessionId,
+        attendanceCount,
+        averageRating,
+        totalRatings,
+        engagementScore,
+        completionRate
+      });
+    }
   }
 }
 

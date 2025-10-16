@@ -535,6 +535,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ count });
   });
 
+  // Analytics routes
+  app.get("/api/analytics/revenue", async (req, res) => {
+    const { startDate, endDate } = req.query;
+    const snapshots = await storage.getRevenueSnapshots(
+      startDate ? new Date(startDate as string) : undefined,
+      endDate ? new Date(endDate as string) : undefined
+    );
+    res.json(snapshots);
+  });
+
+  app.get("/api/analytics/revenue/latest", async (req, res) => {
+    const snapshot = await storage.getLatestRevenueSnapshot();
+    res.json(snapshot || null);
+  });
+
+  app.get("/api/analytics/engagement", async (req, res) => {
+    const { startDate, endDate } = req.query;
+    const metrics = await storage.getEngagementMetrics(
+      startDate ? new Date(startDate as string) : undefined,
+      endDate ? new Date(endDate as string) : undefined
+    );
+    res.json(metrics);
+  });
+
+  app.get("/api/analytics/engagement/latest", async (req, res) => {
+    const metric = await storage.getLatestEngagementMetric();
+    res.json(metric || null);
+  });
+
+  app.get("/api/analytics/sponsors", async (req, res) => {
+    const { startDate, endDate } = req.query;
+    const metrics = await storage.getAllSponsorMetrics(
+      startDate ? new Date(startDate as string) : undefined,
+      endDate ? new Date(endDate as string) : undefined
+    );
+    res.json(metrics);
+  });
+
+  app.get("/api/analytics/sponsors/:sponsorshipId", async (req, res) => {
+    const metrics = await storage.getSponsorMetrics(req.params.sponsorshipId);
+    res.json(metrics);
+  });
+
+  app.get("/api/analytics/sessions", async (req, res) => {
+    const metrics = await storage.getAllSessionMetrics();
+    res.json(metrics);
+  });
+
+  app.get("/api/analytics/sessions/:sessionId", async (req, res) => {
+    const metric = await storage.getSessionMetrics(req.params.sessionId);
+    res.json(metric || null);
+  });
+
+  app.post("/api/analytics/sessions/:sessionId/update", async (req, res) => {
+    await storage.updateSessionMetrics(req.params.sessionId);
+    res.sendStatus(200);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
