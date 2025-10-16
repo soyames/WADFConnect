@@ -292,6 +292,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(certificate);
   });
 
+  // Payment routes for Paystack integration
+  app.post("/api/payment/initialize", async (req, res) => {
+    try {
+      const { email, amount, type, itemId, metadata } = req.body;
+      
+      if (!email || !amount || !type || !itemId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Generate unique reference
+      const reference = `${type}_${itemId}_${Date.now()}`;
+      
+      // Initialize Paystack transaction
+      const { paystackService } = await import("./paystack");
+      const response = await paystackService.initializeTransaction(
+        email,
+        amount,
+        reference,
+        { ...metadata, type, itemId }
+      );
+
+      if (!response.status) {
+        return res.status(400).json({ error: response.message });
+      }
+
+      res.json({
+        authorizationUrl: response.data?.authorization_url,
+        reference: response.data?.reference
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/payment/verify/:reference", async (req, res) => {
+    try {
+      const { paystackService } = await import("./paystack");
+      const response = await paystackService.verifyTransaction(req.params.reference);
+
+      if (!response.status || !response.data) {
+        return res.status(400).json({ error: response.message });
+      }
+
+      const { status, metadata } = response.data;
+      
+      // Update payment status based on transaction type
+      if (status === "success" && metadata) {
+        const { type, itemId } = metadata;
+        
+        if (type === "ticket") {
+          await storage.updateTicketPaymentStatus(itemId, "completed", req.params.reference);
+        } else if (type === "sponsorship") {
+          await storage.updateSponsorshipPaymentStatus(itemId, "completed", req.params.reference);
+        }
+      }
+
+      res.json({
+        status: response.data.status,
+        amount: response.data.amount,
+        reference: response.data.reference
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Paystack webhook for payment notifications
+  app.post("/api/payment/webhook", async (req, res) => {
+    try {
+      const signature = req.headers["x-paystack-signature"] as string;
+      const { paystackService } = await import("./paystack");
+      
+      if (!paystackService.verifyWebhookSignature(JSON.stringify(req.body), signature)) {
+        return res.status(401).json({ error: "Invalid signature" });
+      }
+
+      const { event, data } = req.body;
+
+      if (event === "charge.success" && data.metadata) {
+        const { type, itemId } = data.metadata;
+        
+        if (type === "ticket") {
+          await storage.updateTicketPaymentStatus(itemId, "completed", data.reference);
+        } else if (type === "sponsorship") {
+          await storage.updateSponsorshipPaymentStatus(itemId, "completed", data.reference);
+        }
+      }
+
+      res.sendStatus(200);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Stats endpoint for admin dashboard
   app.get("/api/stats", async (req, res) => {
     const tickets = await storage.getAllTickets();

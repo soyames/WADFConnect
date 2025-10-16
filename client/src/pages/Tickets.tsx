@@ -75,28 +75,88 @@ export default function Tickets() {
     setLoading(true);
 
     try {
-      // If user is not logged in, create account first
-      if (!currentUser) {
+      // Get or create user
+      let userEmail = email;
+      let userId: string | undefined;
+
+      if (currentUser) {
+        userEmail = currentUser.email || email;
+        // Get user from DB
+        const userRes = await fetch(`/api/users/firebase/${currentUser.uid}`);
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          userId = userData.id;
+        }
+      } else {
+        // Sign up new user - it creates the user in DB internally
         await signUp(email, password, name);
+        
+        // Wait briefly for auth state to update, then get user
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Fetch user data from Firebase auth state
+        const auth = (await import("@/lib/firebase")).auth;
+        const user = auth.currentUser;
+        
+        if (user) {
+          const userRes = await fetch(`/api/users/firebase/${user.uid}`);
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            userId = userData.id;
+          }
+        }
       }
 
-      // Process payment (will integrate with Paystack/Flutterwave in backend)
+      if (!userId) {
+        throw new Error("Failed to create user");
+      }
+
       const tier = ticketTiers.find(t => t.id === selectedTier);
-      
-      // TODO: Integrate actual payment gateway
-      toast({
-        title: "Payment processing",
-        description: "Redirecting to secure payment gateway...",
+      if (!tier) throw new Error("Invalid ticket tier");
+
+      // Create ticket in DB
+      const ticketRes = await fetch("/api/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          ticketType: selectedTier,
+          price: tier.price * 100, // Convert to cents
+          currency: "EUR",
+          paymentStatus: "pending"
+        })
       });
 
-      // Simulate payment flow
-      setTimeout(() => {
+      const ticket = await ticketRes.json();
+
+      // Initialize Paystack payment
+      const paymentRes = await fetch("/api/payment/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userEmail,
+          amount: tier.price * 100, // Paystack uses kobo (cents)
+          type: "ticket",
+          itemId: ticket.id,
+          metadata: {
+            name,
+            ticketType: tier.name
+          }
+        })
+      });
+
+      const paymentData = await paymentRes.json();
+
+      if (paymentData.authorizationUrl) {
         toast({
-          title: "Ticket purchased!",
-          description: `You're registered for WADF 2025 with a ${tier?.name}.`,
+          title: "Redirecting to payment",
+          description: "You'll be redirected to complete your purchase...",
         });
-        setLocation("/agenda");
-      }, 2000);
+        // Redirect to Paystack payment page
+        window.location.href = paymentData.authorizationUrl;
+      } else {
+        throw new Error("Failed to initialize payment");
+      }
 
     } catch (error: any) {
       toast({

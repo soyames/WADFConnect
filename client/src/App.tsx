@@ -15,6 +15,7 @@ import Sponsors from "@/pages/Sponsors";
 import Agenda from "@/pages/Agenda";
 import FAQ from "@/pages/FAQ";
 import Admin from "@/pages/Admin";
+import PaymentCallback from "@/pages/PaymentCallback";
 
 function Router() {
   return (
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/agenda" component={Agenda} />
       <Route path="/faq" component={FAQ} />
       <Route path="/admin" component={Admin} />
+      <Route path="/payment/callback" component={PaymentCallback} />
       <Route component={NotFound} />
     </Switch>
   );
