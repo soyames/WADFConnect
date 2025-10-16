@@ -46,7 +46,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <Link href="/">
-              <a className="flex items-center gap-3 hover-elevate p-2 rounded-lg transition-all" data-testid="link-logo">
+              <div className="flex items-center gap-3 hover-elevate p-2 rounded-lg transition-all cursor-pointer" data-testid="link-logo">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-chart-2 flex items-center justify-center">
                     <span className="text-white font-bold text-sm">W</span>
@@ -55,20 +55,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     WADF
                   </span>
                 </div>
-              </a>
+              </div>
             </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-1">
               {navigation.map((item) => (
                 <Link key={item.href} href={item.href}>
-                  <Button
-                    variant="ghost"
-                    className={`${isActive(item.href) ? "bg-muted" : ""}`}
+                  <button
+                    className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover-elevate active-elevate-2 h-9 px-4 py-2 ${isActive(item.href) ? "bg-muted" : ""}`}
                     data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
                   >
                     {item.name}
-                  </Button>
+                  </button>
                 </Link>
               ))}
             </nav>
@@ -124,9 +123,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </DropdownMenu>
               ) : (
                 <Link href="/login">
-                  <Button variant="outline" data-testid="button-signin">
+                  <button 
+                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover-elevate active-elevate-2 h-9 px-4 py-2"
+                    data-testid="button-signin"
+                  >
                     Sign In
-                  </Button>
+                  </button>
                 </Link>
               )}
 
@@ -153,14 +155,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <div className="flex flex-col space-y-2">
                 {navigation.map((item) => (
                   <Link key={item.href} href={item.href}>
-                    <Button
-                      variant="ghost"
-                      className={`w-full justify-start ${isActive(item.href) ? "bg-muted" : ""}`}
+                    <button
+                      className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover-elevate active-elevate-2 h-9 px-4 py-2 w-full justify-start ${isActive(item.href) ? "bg-muted" : ""}`}
                       onClick={() => setMobileMenuOpen(false)}
                       data-testid={`mobile-nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
                     >
                       {item.name}
-                    </Button>
+                    </button>
                   </Link>
                 ))}
               </div>
@@ -196,30 +197,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <ul className="space-y-2 text-sm">
                 <li>
                   <Link href="/about">
-                    <a className="text-muted-foreground hover:text-foreground transition-colors">
+                    <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                       About WADF
-                    </a>
+                    </span>
                   </Link>
                 </li>
                 <li>
                   <Link href="/tickets">
-                    <a className="text-muted-foreground hover:text-foreground transition-colors">
+                    <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                       Buy Tickets
-                    </a>
+                    </span>
                   </Link>
                 </li>
                 <li>
                   <Link href="/cfp">
-                    <a className="text-muted-foreground hover:text-foreground transition-colors">
+                    <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                       Call for Proposals
-                    </a>
+                    </span>
                   </Link>
                 </li>
                 <li>
                   <Link href="/sponsors">
-                    <a className="text-muted-foreground hover:text-foreground transition-colors">
+                    <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                       Become a Sponsor
-                    </a>
+                    </span>
                   </Link>
                 </li>
               </ul>
