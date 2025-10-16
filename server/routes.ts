@@ -9,7 +9,10 @@ import {
   insertSessionSchema,
   insertAttendanceSchema,
   insertRatingSchema,
-  insertCertificateSchema
+  insertCertificateSchema,
+  insertConnectionSchema,
+  insertConversationSchema,
+  insertMessageSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -419,6 +422,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       averageRating: Math.round(averageRating * 10) / 10,
       totalSessions: sessions.length
     });
+  });
+
+  // Networking routes - Connections
+  app.post("/api/connections", async (req, res) => {
+    try {
+      const validatedData = insertConnectionSchema.parse(req.body);
+      
+      // Check if connection already exists
+      const existing = await storage.getConnection(validatedData.requesterId, validatedData.addresseeId);
+      if (existing) {
+        return res.status(400).json({ error: "Connection request already exists" });
+      }
+
+      const connection = await storage.createConnection(validatedData);
+      res.json(connection);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/connections/user/:userId", async (req, res) => {
+    const connections = await storage.getUserConnections(req.params.userId);
+    res.json(connections);
+  });
+
+  app.patch("/api/connections/:id/status", async (req, res) => {
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ error: "Status is required" });
+    }
+    const connection = await storage.updateConnectionStatus(req.params.id, status);
+    if (!connection) {
+      return res.status(404).json({ error: "Connection not found" });
+    }
+    res.json(connection);
+  });
+
+  // Networking routes - Conversations
+  app.post("/api/conversations", async (req, res) => {
+    try {
+      const validatedData = insertConversationSchema.parse(req.body);
+      
+      // Check if conversation already exists
+      const existing = await storage.getConversation(
+        validatedData.participant1Id,
+        validatedData.participant2Id
+      );
+      if (existing) {
+        return res.json(existing);
+      }
+
+      const conversation = await storage.createConversation(validatedData);
+      res.json(conversation);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/conversations/user/:userId", async (req, res) => {
+    const conversations = await storage.getUserConversations(req.params.userId);
+    res.json(conversations);
+  });
+
+  app.get("/api/conversations/:participant1Id/:participant2Id", async (req, res) => {
+    const conversation = await storage.getConversation(
+      req.params.participant1Id,
+      req.params.participant2Id
+    );
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    res.json(conversation);
+  });
+
+  // Networking routes - Messages
+  app.post("/api/messages", async (req, res) => {
+    try {
+      const validatedData = insertMessageSchema.parse(req.body);
+      const message = await storage.sendMessage(validatedData);
+      res.json(message);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/messages/conversation/:conversationId", async (req, res) => {
+    const messages = await storage.getConversationMessages(req.params.conversationId);
+    res.json(messages);
+  });
+
+  app.patch("/api/messages/:id/read", async (req, res) => {
+    await storage.markMessageAsRead(req.params.id);
+    res.sendStatus(200);
+  });
+
+  app.get("/api/messages/unread/:userId", async (req, res) => {
+    const count = await storage.getUnreadMessageCount(req.params.userId);
+    res.json({ count });
   });
 
   const httpServer = createServer(app);

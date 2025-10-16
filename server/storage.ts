@@ -17,6 +17,12 @@ import {
   type InsertCertificate,
   type Faq,
   type InsertFaq,
+  type Connection,
+  type InsertConnection,
+  type Conversation,
+  type InsertConversation,
+  type Message,
+  type InsertMessage,
   users,
   tickets,
   proposals,
@@ -25,7 +31,10 @@ import {
   attendance,
   ratings,
   certificates,
-  faqs
+  faqs,
+  connections,
+  conversations,
+  messages
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, avg, count } from "drizzle-orm";
@@ -86,6 +95,24 @@ export interface IStorage {
   // FAQs
   getAllFaqs(): Promise<Faq[]>;
   createFaq(faq: InsertFaq): Promise<Faq>;
+
+  // Connections
+  createConnection(connection: InsertConnection): Promise<Connection>;
+  getUserConnections(userId: string): Promise<Connection[]>;
+  updateConnectionStatus(id: string, status: string): Promise<Connection | undefined>;
+  getConnection(requesterId: string, addresseeId: string): Promise<Connection | undefined>;
+
+  // Conversations
+  createConversation(conversation: InsertConversation): Promise<Conversation>;
+  getConversation(participant1Id: string, participant2Id: string): Promise<Conversation | undefined>;
+  getUserConversations(userId: string): Promise<Conversation[]>;
+  updateConversationLastMessage(id: string): Promise<void>;
+
+  // Messages
+  sendMessage(message: InsertMessage): Promise<Message>;
+  getConversationMessages(conversationId: string): Promise<Message[]>;
+  markMessageAsRead(id: string): Promise<void>;
+  getUnreadMessageCount(userId: string): Promise<number>;
 }
 
 export class DrizzleStorage implements IStorage {
@@ -304,6 +331,112 @@ export class DrizzleStorage implements IStorage {
   async createFaq(insertFaq: InsertFaq): Promise<Faq> {
     const result = await db.insert(faqs).values(insertFaq).returning();
     return result[0];
+  }
+
+  // Connections
+  async createConnection(insertConnection: InsertConnection): Promise<Connection> {
+    const result = await db.insert(connections).values(insertConnection).returning();
+    return result[0];
+  }
+
+  async getUserConnections(userId: string): Promise<Connection[]> {
+    return await db.select().from(connections)
+      .where(eq(connections.requesterId, userId))
+      .union(
+        db.select().from(connections).where(eq(connections.addresseeId, userId))
+      );
+  }
+
+  async updateConnectionStatus(id: string, status: string): Promise<Connection | undefined> {
+    const result = await db.update(connections)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(connections.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getConnection(requesterId: string, addresseeId: string): Promise<Connection | undefined> {
+    const result = await db.select().from(connections)
+      .where(
+        and(
+          eq(connections.requesterId, requesterId),
+          eq(connections.addresseeId, addresseeId)
+        )
+      )
+      .limit(1);
+    return result[0];
+  }
+
+  // Conversations
+  async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
+    const result = await db.insert(conversations).values(insertConversation).returning();
+    return result[0];
+  }
+
+  async getConversation(participant1Id: string, participant2Id: string): Promise<Conversation | undefined> {
+    const result = await db.select().from(conversations)
+      .where(
+        and(
+          eq(conversations.participant1Id, participant1Id),
+          eq(conversations.participant2Id, participant2Id)
+        )
+      )
+      .union(
+        db.select().from(conversations).where(
+          and(
+            eq(conversations.participant1Id, participant2Id),
+            eq(conversations.participant2Id, participant1Id)
+          )
+        )
+      )
+      .limit(1);
+    return result[0];
+  }
+
+  async getUserConversations(userId: string): Promise<Conversation[]> {
+    return await db.select().from(conversations)
+      .where(eq(conversations.participant1Id, userId))
+      .union(
+        db.select().from(conversations).where(eq(conversations.participant2Id, userId))
+      );
+  }
+
+  async updateConversationLastMessage(id: string): Promise<void> {
+    await db.update(conversations)
+      .set({ lastMessageAt: new Date() })
+      .where(eq(conversations.id, id));
+  }
+
+  // Messages
+  async sendMessage(insertMessage: InsertMessage): Promise<Message> {
+    const result = await db.insert(messages).values(insertMessage).returning();
+    await this.updateConversationLastMessage(insertMessage.conversationId);
+    return result[0];
+  }
+
+  async getConversationMessages(conversationId: string): Promise<Message[]> {
+    return await db.select().from(messages).where(eq(messages.conversationId, conversationId));
+  }
+
+  async markMessageAsRead(id: string): Promise<void> {
+    await db.update(messages).set({ isRead: true }).where(eq(messages.id, id));
+  }
+
+  async getUnreadMessageCount(userId: string): Promise<number> {
+    const userConvs = await this.getUserConversations(userId);
+    const convIds = userConvs.map(c => c.id);
+    
+    const unreadMessages = await db.select().from(messages)
+      .where(
+        and(
+          eq(messages.isRead, false),
+          // Message is not from the user themselves
+        )
+      );
+    
+    return unreadMessages.filter(m => 
+      convIds.includes(m.conversationId) && m.senderId !== userId
+    ).length;
   }
 }
 
