@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.local
+.vite
+.cache
+*.log
+README.md
+.DS_Store
+Thumbs.db
+.replit
+replit.nix
+.config
+/tmp
