@@ -238,8 +238,58 @@
     "completion": "% Conclusão"
   },
   "faq": {
-    "title": "Perguntas Frequentes",
-    "subtitle": "Encontre respostas para perguntas comuns sobre WADF 2025"
+    "badge": "Central de Ajuda",
+    "pageTitle": "Perguntas",
+    "pageTitleHighlight": "Frequentes",
+    "subtitle": "Encontre respostas para perguntas comuns sobre WADF 2025",
+    "general": {
+      "title": "Geral",
+      "q1": "O que é o Fórum de Design da África Ocidental?",
+      "a1": "WADF é o evento principal que celebra e eleva a indústria criativa da África Ocidental. É uma conferência de vários dias reunindo designers, inovadores e especialistas do setor de toda a região e além.",
+      "q2": "Quando e onde será o WADF 2025?",
+      "a2": "WADF 2025 acontecerá de 15 a 17 de junho de 2025 no Centro de Convenções Eko em Lagos, Nigéria.",
+      "q3": "Quem deve participar do WADF?",
+      "a3": "WADF é perfeito para designers, gerentes de produto, profissionais criativos, empreendedores, estudantes e qualquer pessoa interessada na economia criativa e cenário de inovação da África Ocidental."
+    },
+    "tickets": {
+      "title": "Ingressos",
+      "q1": "Como compro um ingresso?",
+      "a1": "Simplesmente visite a página de Ingressos, selecione seu passe preferido (Pré-venda, Regular ou VIP) e complete o processo de pagamento seguro. Sua conta será automaticamente criada após o pagamento bem-sucedido.",
+      "q2": "O que está incluído em cada tipo de ingresso?",
+      "a2": "Todos os ingressos incluem acesso completo à conferência, sessões, workshops, eventos de networking e um certificado digital. Passes VIP adicionam benefícios exclusivos como acesso ao lounge, assentos prioritários, encontros com palestrantes e brindes premium.",
+      "q3": "Posso obter reembolso?",
+      "a3": "Os ingressos geralmente não são reembolsáveis. No entanto, oferecemos transferências de ingressos se você não puder comparecer. Entre em contato com nossa equipe de suporte para circunstâncias especiais.",
+      "q4": "Quais métodos de pagamento vocês aceitam?",
+      "a4": "Aceitamos todos os principais cartões de crédito/débito e mobile money através de nossos parceiros de pagamento seguros Paystack e Flutterwave."
+    },
+    "speakers": {
+      "title": "Palestrantes",
+      "q1": "Como envio uma proposta de sessão?",
+      "a1": "Visite a página de Chamada de Propostas, faça login ou crie uma conta, e complete o formulário de envio com os detalhes da sua sessão. Nossa equipe revisará todas as propostas e notificará você da decisão.",
+      "q2": "O que faz uma boa proposta?",
+      "a2": "Propostas fortes são específicas, práticas e relevantes para nosso público. Foque em resultados de aprendizagem claros, insights práticos e como sua sessão beneficiará os participantes. Conteúdo original e perspectivas diversas são altamente valorizados.",
+      "q3": "Qual é o prazo final do CFP?",
+      "a3": "A Chamada de Propostas fecha em 31 de março de 2025. As decisões serão comunicadas dentro de 2 semanas após o envio.",
+      "q4": "Palestrantes recebem ingressos gratuitos?",
+      "a4": "Sim! Palestrantes aceitos recebem um passe de conferência gratuito e reconhecimento em nossa comunidade de palestrantes."
+    },
+    "sponsors": {
+      "title": "Patrocinadores",
+      "q1": "Como minha empresa pode patrocinar o WADF?",
+      "a1": "Visite a página de Patrocinadores para explorar nossos pacotes de parceria variando de Supporter (€50) a Diamond (€5.000). Cada nível oferece diferentes benefícios incluindo visibilidade da marca, oportunidades de palestras e passes de delegados.",
+      "q2": "Quais são os benefícios do patrocínio?",
+      "a2": "Os benefícios variam por nível e incluem colocação de logo, promoção em mídias sociais, espaço de estande, slots de palestras, passes de delegados e acesso à lista de e-mails. Patrocinadores Diamond recebem pacotes de benefícios personalizados.",
+      "q3": "Posso personalizar meu pacote de patrocínio?",
+      "a3": "Com certeza! Para os níveis Gold e Diamond, teremos prazer em discutir pacotes personalizados alinhados com seus objetivos específicos. Entre em contato com nossa equipe de parcerias após selecionar um nível."
+    },
+    "contact": {
+      "title": "Ainda tem dúvidas?",
+      "description": "Não consegue encontrar a resposta que procura? Nossa equipe está aqui para ajudar.",
+      "email": "E-mail:",
+      "emailAddress": "hello@wadf.org",
+      "responseTime": "Tempo de resposta:",
+      "responseTimeValue": "Dentro de 24 horas"
+    }
   },
   "admin": {
     "title": "Painel Administrativo",

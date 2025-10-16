@@ -238,8 +238,58 @@
     "completion": "% Achèvement"
   },
   "faq": {
-    "title": "Questions fréquentes",
-    "subtitle": "Trouvez des réponses aux questions courantes sur WADF 2025"
+    "badge": "Centre d'aide",
+    "pageTitle": "Questions",
+    "pageTitleHighlight": "Fréquentes",
+    "subtitle": "Trouvez des réponses aux questions courantes sur WADF 2025",
+    "general": {
+      "title": "Général",
+      "q1": "Qu'est-ce que le Forum de Design d'Afrique de l'Ouest?",
+      "a1": "WADF est l'événement phare qui célèbre et élève l'industrie créative d'Afrique de l'Ouest. C'est une conférence de plusieurs jours réunissant des designers, des innovateurs et des experts de l'industrie de toute la région et au-delà.",
+      "q2": "Quand et où aura lieu WADF 2025?",
+      "a2": "WADF 2025 se tiendra du 15 au 17 juin 2025 au Centre de Convention Eko à Lagos, Nigeria.",
+      "q3": "Qui devrait assister à WADF?",
+      "a3": "WADF est parfait pour les designers, chefs de produit, professionnels créatifs, entrepreneurs, étudiants et toute personne intéressée par l'économie créative et le paysage d'innovation d'Afrique de l'Ouest."
+    },
+    "tickets": {
+      "title": "Billets",
+      "q1": "Comment acheter un billet?",
+      "a1": "Visitez simplement la page Billets, sélectionnez votre pass préféré (Tarif anticipé, Régulier ou VIP) et complétez le processus de paiement sécurisé. Votre compte sera automatiquement créé après un paiement réussi.",
+      "q2": "Qu'est-ce qui est inclus dans chaque type de billet?",
+      "a2": "Tous les billets incluent l'accès complet à la conférence, les sessions, les ateliers, les événements de réseautage et un certificat numérique. Les pass VIP ajoutent des avantages exclusifs comme l'accès au salon, les places prioritaires, les rencontres avec les orateurs et des cadeaux premium.",
+      "q3": "Puis-je obtenir un remboursement?",
+      "a3": "Les billets sont généralement non remboursables. Cependant, nous proposons des transferts de billets si vous ne pouvez pas assister. Contactez notre équipe de support pour des circonstances particulières.",
+      "q4": "Quels modes de paiement acceptez-vous?",
+      "a4": "Nous acceptons toutes les principales cartes de crédit/débit et l'argent mobile via nos partenaires de paiement sécurisés Paystack et Flutterwave."
+    },
+    "speakers": {
+      "title": "Orateurs",
+      "q1": "Comment soumettre une proposition de session?",
+      "a1": "Visitez la page Appel à Propositions, connectez-vous ou créez un compte, et complétez le formulaire de soumission avec les détails de votre session. Notre équipe examinera toutes les propositions et vous informera de la décision.",
+      "q2": "Qu'est-ce qui fait une bonne proposition?",
+      "a2": "Les propositions solides sont spécifiques, concrètes et pertinentes pour notre public. Concentrez-vous sur des résultats d'apprentissage clairs, des insights pratiques et comment votre session bénéficiera aux participants. Le contenu original et les perspectives diverses sont très appréciés.",
+      "q3": "Quelle est la date limite du CFP?",
+      "a3": "L'Appel à Propositions se termine le 31 mars 2025. Les décisions seront communiquées dans les 2 semaines suivant la soumission.",
+      "q4": "Les orateurs reçoivent-ils des billets gratuits?",
+      "a4": "Oui! Les orateurs acceptés reçoivent un pass de conférence gratuit et une reconnaissance dans notre communauté d'orateurs."
+    },
+    "sponsors": {
+      "title": "Sponsors",
+      "q1": "Comment mon entreprise peut-elle sponsoriser WADF?",
+      "a1": "Visitez la page Sponsors pour explorer nos packages de partenariat allant de Supporter (€50) à Diamond (€5,000). Chaque niveau offre différents avantages incluant la visibilité de la marque, des opportunités de présentation et des pass délégués.",
+      "q2": "Quels sont les avantages du sponsoring?",
+      "a2": "Les avantages varient selon le niveau et incluent le placement du logo, la promotion sur les réseaux sociaux, l'espace de stand, les créneaux de présentation, les pass délégués et l'accès à la liste d'e-mails. Les sponsors Diamond reçoivent des packages d'avantages personnalisés.",
+      "q3": "Puis-je personnaliser mon package de sponsoring?",
+      "a3": "Absolument! Pour les niveaux Gold et Diamond, nous sommes heureux de discuter de packages personnalisés alignés avec vos objectifs spécifiques. Contactez notre équipe de partenariats après avoir sélectionné un niveau."
+    },
+    "contact": {
+      "title": "Vous avez encore des questions?",
+      "description": "Vous ne trouvez pas la réponse que vous cherchez? Notre équipe est là pour vous aider.",
+      "email": "E-mail:",
+      "emailAddress": "hello@wadf.org",
+      "responseTime": "Temps de réponse:",
+      "responseTimeValue": "Dans les 24 heures"
+    }
   },
   "admin": {
     "title": "Tableau de bord administrateur",
