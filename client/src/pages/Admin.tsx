@@ -11,20 +11,66 @@ import {
   TrendingUp,
   MessageSquare,
   FileText,
-  Award
+  Award,
+  Check,
+  X,
+  Loader2
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { Proposal } from "@shared/schema";
 
 export default function Admin() {
   const { userData } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (userData && userData.role !== "organizer" && userData.role !== "admin") {
       setLocation("/");
     }
   }, [userData, setLocation]);
+
+  // Fetch real stats
+  const { data: statsData } = useQuery({
+    queryKey: ["/api/stats"],
+    enabled: userData?.role === "organizer" || userData?.role === "admin"
+  });
+
+  // Fetch proposals
+  const { data: proposals = [], isLoading: proposalsLoading } = useQuery<Proposal[]>({
+    queryKey: ["/api/proposals"],
+    enabled: userData?.role === "organizer" || userData?.role === "admin"
+  });
+
+  // Review proposal mutation
+  const reviewProposal = useMutation({
+    mutationFn: async ({ id, status, reviewNotes }: { id: string; status: string; reviewNotes?: string }) => {
+      return apiRequest(`/api/proposals/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, reviewNotes })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/proposals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Proposal updated",
+        description: "The proposal status has been updated successfully."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update failed",
+        description: "Failed to update proposal status.",
+        variant: "destructive"
+      });
+    }
+  });
 
   if (!userData || (userData.role !== "organizer" && userData.role !== "admin")) {
     return null;
@@ -33,29 +79,29 @@ export default function Admin() {
   const stats = [
     {
       title: "Total Revenue",
-      value: "€47,500",
-      change: "+12.5%",
+      value: statsData ? `€${(statsData.totalRevenue / 100).toLocaleString()}` : "€0",
+      change: statsData ? `${statsData.ticketsSold} tickets` : "0 tickets",
       icon: DollarSign,
       color: "text-chart-3"
     },
     {
       title: "Tickets Sold",
-      value: "247",
-      change: "+23",
+      value: statsData?.ticketsSold?.toString() || "0",
+      change: "Completed sales",
       icon: Ticket,
       color: "text-primary"
     },
     {
       title: "Proposals",
-      value: "68",
-      change: "12 pending",
+      value: statsData?.totalProposals?.toString() || "0",
+      change: `${statsData?.pendingProposals || 0} pending`,
       icon: FileText,
       color: "text-chart-4"
     },
     {
       title: "Avg. Rating",
-      value: "4.7",
-      change: "From 42 sessions",
+      value: statsData?.averageRating?.toString() || "0",
+      change: `From ${statsData?.totalSessions || 0} sessions`,
       icon: Star,
       color: "text-chart-5"
     }
@@ -118,11 +164,67 @@ export default function Admin() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Proposal management interface will be implemented here</p>
-                  <p className="text-sm mt-2">Accept, reject, and schedule proposals</p>
-                </div>
+                {proposalsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : proposals.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No proposals submitted yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {proposals.map((proposal) => (
+                      <div key={proposal.id} className="border rounded-lg p-4 space-y-3" data-testid={`proposal-${proposal.id}`}>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg">{proposal.title}</h3>
+                            <p className="text-sm text-muted-foreground mt-1">{proposal.description}</p>
+                          </div>
+                          <Badge 
+                            variant={
+                              proposal.status === "accepted" ? "default" : 
+                              proposal.status === "rejected" ? "destructive" : 
+                              "outline"
+                            }
+                            data-testid={`badge-status-${proposal.id}`}
+                          >
+                            {proposal.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm">
+                          <Badge variant="secondary">{proposal.track}</Badge>
+                          <Badge variant="secondary">{proposal.sessionType}</Badge>
+                          <span className="text-muted-foreground">{proposal.duration} minutes</span>
+                        </div>
+                        {proposal.status === "submitted" || proposal.status === "under-review" ? (
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              size="sm"
+                              onClick={() => reviewProposal.mutate({ id: proposal.id, status: "accepted" })}
+                              disabled={reviewProposal.isPending}
+                              data-testid={`button-accept-${proposal.id}`}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => reviewProposal.mutate({ id: proposal.id, status: "rejected" })}
+                              disabled={reviewProposal.isPending}
+                              data-testid={`button-reject-${proposal.id}`}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
