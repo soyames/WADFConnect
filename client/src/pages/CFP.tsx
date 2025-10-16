@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Lightbulb, CheckCircle2 } from "lucide-react";
+import { Loader2, Lightbulb, CheckCircle2, Calendar, Clock, FileText, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
+import type { CfpSetting } from "@shared/schema";
 
 export default function CFP() {
   const { currentUser } = useAuth();
@@ -26,6 +28,11 @@ export default function CFP() {
     track: "",
     sessionType: "",
     duration: "45"
+  });
+
+  // Fetch CFP settings
+  const { data: cfpSettings, isLoading: settingsLoading } = useQuery<CfpSetting>({
+    queryKey: ["/api/cfp-settings"]
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,13 +105,198 @@ export default function CFP() {
     );
   }
 
+  // Loading state
+  if (settingsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" data-testid="loader-cfp-settings" />
+      </div>
+    );
+  }
+
+  // Show placeholder when CFP is inactive
+  if (!cfpSettings?.isActive) {
+    return (
+      <div className="min-h-screen py-16">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 gap-2" variant="outline" data-testid="badge-cfp-status">
+              <AlertCircle className="h-3 w-3" />
+              CFP Closed
+            </Badge>
+            <h1 className="font-serif text-5xl md:text-6xl font-bold mb-6" data-testid="text-placeholder-title">
+              {cfpSettings?.placeholderTitle || "Call for Proposals Opening Soon"}
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-placeholder-message">
+              {cfpSettings?.placeholderMessage || "We'll be opening our Call for Proposals soon. Check back for updates!"}
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {/* CFP Period */}
+            {(cfpSettings?.startDate || cfpSettings?.endDate) && (
+              <Card data-testid="card-cfp-period">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    CFP Period
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {cfpSettings.startDate && (
+                      <div data-testid="text-start-date">
+                        <div className="text-sm font-medium text-muted-foreground mb-1">Opens</div>
+                        <div className="text-lg font-semibold">
+                          {new Date(cfpSettings.startDate).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {cfpSettings.endDate && (
+                      <div data-testid="text-end-date">
+                        <div className="text-sm font-medium text-muted-foreground mb-1">Closes</div>
+                        <div className="text-lg font-semibold">
+                          {new Date(cfpSettings.endDate).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Submission Guidelines */}
+            {cfpSettings?.submissionGuidelines && (
+              <Card data-testid="card-submission-guidelines">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Submission Guidelines
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground whitespace-pre-wrap" data-testid="text-submission-guidelines">
+                    {cfpSettings.submissionGuidelines}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Evaluation Criteria */}
+            {cfpSettings?.evaluationCriteria && Array.isArray(cfpSettings.evaluationCriteria) && cfpSettings.evaluationCriteria.length > 0 && (
+              <Card data-testid="card-evaluation-criteria">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5" />
+                    Evaluation Criteria
+                  </CardTitle>
+                  <CardDescription>
+                    Your proposal will be evaluated based on the following criteria
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {cfpSettings.evaluationCriteria.map((criterion: any, index: number) => (
+                      <div 
+                        key={index} 
+                        className="p-4 border rounded-lg" 
+                        data-testid={`evaluation-criterion-${index}`}
+                      >
+                        <h4 className="font-semibold mb-2">{criterion.name}</h4>
+                        <p className="text-sm text-muted-foreground">{criterion.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Allowed Tracks and Session Types */}
+            <div className="grid gap-6 md:grid-cols-2">
+              {cfpSettings?.allowedTracks && Array.isArray(cfpSettings.allowedTracks) && cfpSettings.allowedTracks.length > 0 && (
+                <Card data-testid="card-allowed-tracks">
+                  <CardHeader>
+                    <CardTitle>Allowed Tracks</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {cfpSettings.allowedTracks.map((track: string, index: number) => (
+                        <Badge key={index} variant="secondary" data-testid={`track-${index}`}>
+                          {track}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {cfpSettings?.allowedSessionTypes && Array.isArray(cfpSettings.allowedSessionTypes) && cfpSettings.allowedSessionTypes.length > 0 && (
+                <Card data-testid="card-allowed-session-types">
+                  <CardHeader>
+                    <CardTitle>Session Types</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {cfpSettings.allowedSessionTypes.map((type: string, index: number) => (
+                        <Badge key={index} variant="secondary" data-testid={`session-type-${index}`}>
+                          {type}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Duration Limits */}
+            {(cfpSettings?.minDuration || cfpSettings?.maxDuration) && (
+              <Card data-testid="card-duration-limits">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Duration Requirements
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4">
+                    {cfpSettings.minDuration && (
+                      <div data-testid="text-min-duration">
+                        <div className="text-sm font-medium text-muted-foreground mb-1">Minimum</div>
+                        <div className="text-lg font-semibold">{cfpSettings.minDuration} minutes</div>
+                      </div>
+                    )}
+                    {cfpSettings.maxDuration && (
+                      <div data-testid="text-max-duration">
+                        <div className="text-sm font-medium text-muted-foreground mb-1">Maximum</div>
+                        <div className="text-lg font-semibold">{cfpSettings.maxDuration} minutes</div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show submission form when CFP is active
   return (
     <div className="min-h-screen py-16">
       <div className="container mx-auto max-w-4xl px-4">
         <div className="text-center mb-12">
-          <Badge className="mb-4 gap-2" variant="outline" data-testid="badge-cfp">
-            <Lightbulb className="h-3 w-3" />
-            {t("cfp.title")}
+          <Badge className="mb-4 gap-2" variant="default" data-testid="badge-cfp-active">
+            <CheckCircle2 className="h-3 w-3" />
+            CFP Open
           </Badge>
           <h1 className="font-serif text-5xl md:text-6xl font-bold mb-6">
             {t("cfp.badge")}

@@ -1989,15 +1989,115 @@ function CfpSettingsSection({ userId }: { userId: string }) {
     }
   });
 
+  const [formData, setFormData] = useState({
+    isActive: false,
+    placeholderTitle: "",
+    placeholderMessage: "",
+    submissionGuidelines: "",
+    evaluationCriteria: [] as Array<{ name: string; description: string }>,
+    allowedTracks: [] as string[],
+    allowedSessionTypes: [] as string[],
+    minDuration: 15,
+    maxDuration: 90,
+    startDate: null as Date | null,
+    endDate: null as Date | null
+  });
+
+  const [criterionInput, setCriterionInput] = useState({ name: "", description: "" });
+  const [trackInput, setTrackInput] = useState("");
+  const [sessionTypeInput, setSessionTypeInput] = useState("");
+
+  // Update form data when settings are loaded
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        isActive: settings.isActive || false,
+        placeholderTitle: settings.placeholderTitle || "",
+        placeholderMessage: settings.placeholderMessage || "",
+        submissionGuidelines: settings.submissionGuidelines || "",
+        evaluationCriteria: Array.isArray(settings.evaluationCriteria) ? settings.evaluationCriteria : [],
+        allowedTracks: Array.isArray(settings.allowedTracks) ? settings.allowedTracks : [],
+        allowedSessionTypes: Array.isArray(settings.allowedSessionTypes) ? settings.allowedSessionTypes : [],
+        minDuration: settings.minDuration || 15,
+        maxDuration: settings.maxDuration || 90,
+        startDate: settings.startDate ? new Date(settings.startDate) : null,
+        endDate: settings.endDate ? new Date(settings.endDate) : null
+      });
+    }
+  }, [settings]);
+
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
       return await apiRequest("PATCH", "/api/admin/cfp-settings", data, getAdminHeaders(userId));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cfp-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cfp-settings"] });
       toast({ title: "CFP settings updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update settings", variant: "destructive" });
     }
   });
+
+  const addCriterion = () => {
+    if (criterionInput.name && criterionInput.description) {
+      setFormData({
+        ...formData,
+        evaluationCriteria: [...formData.evaluationCriteria, criterionInput]
+      });
+      setCriterionInput({ name: "", description: "" });
+    }
+  };
+
+  const removeCriterion = (index: number) => {
+    setFormData({
+      ...formData,
+      evaluationCriteria: formData.evaluationCriteria.filter((_, i) => i !== index)
+    });
+  };
+
+  const addTrack = () => {
+    if (trackInput && !formData.allowedTracks.includes(trackInput)) {
+      setFormData({
+        ...formData,
+        allowedTracks: [...formData.allowedTracks, trackInput]
+      });
+      setTrackInput("");
+    }
+  };
+
+  const removeTrack = (track: string) => {
+    setFormData({
+      ...formData,
+      allowedTracks: formData.allowedTracks.filter(t => t !== track)
+    });
+  };
+
+  const addSessionType = () => {
+    if (sessionTypeInput && !formData.allowedSessionTypes.includes(sessionTypeInput)) {
+      setFormData({
+        ...formData,
+        allowedSessionTypes: [...formData.allowedSessionTypes, sessionTypeInput]
+      });
+      setSessionTypeInput("");
+    }
+  };
+
+  const removeSessionType = (type: string) => {
+    setFormData({
+      ...formData,
+      allowedSessionTypes: formData.allowedSessionTypes.filter(t => t !== type)
+    });
+  };
+
+  const handleSave = () => {
+    updateMutation.mutate({
+      ...formData,
+      startDate: formData.startDate?.toISOString(),
+      endDate: formData.endDate?.toISOString()
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -2014,59 +2114,230 @@ function CfpSettingsSection({ userId }: { userId: string }) {
             </div>
           ) : (
             <div className="space-y-6">
+              {/* CFP Status */}
               <div className="flex items-center justify-between border rounded-lg p-4">
                 <div>
                   <h3 className="font-semibold">CFP Status</h3>
                   <p className="text-sm text-muted-foreground">
-                    {settings?.isActive ? "Accepting proposals" : "Closed for submissions"}
+                    {formData.isActive ? "Accepting proposals" : "Closed for submissions"}
                   </p>
                 </div>
                 <Switch
-                  checked={settings?.isActive || false}
-                  onCheckedChange={(checked) => updateMutation.mutate({ isActive: checked })}
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                   data-testid="switch-cfp-active"
                 />
               </div>
 
+              {/* Placeholder Content */}
               <div className="space-y-4">
                 <div>
-                  <Label>Placeholder Title</Label>
+                  <Label htmlFor="placeholder-title">Placeholder Title</Label>
                   <Input
-                    defaultValue={settings?.placeholderTitle || ""}
+                    id="placeholder-title"
+                    value={formData.placeholderTitle}
+                    onChange={(e) => setFormData({ ...formData, placeholderTitle: e.target.value })}
                     placeholder="Call for Proposals Opening Soon"
                     data-testid="input-cfp-title"
                   />
                 </div>
                 <div>
-                  <Label>Placeholder Message</Label>
+                  <Label htmlFor="placeholder-message">Placeholder Message</Label>
                   <Textarea
-                    defaultValue={settings?.placeholderMessage || ""}
+                    id="placeholder-message"
+                    value={formData.placeholderMessage}
+                    onChange={(e) => setFormData({ ...formData, placeholderMessage: e.target.value })}
                     placeholder="We'll be opening our Call for Proposals soon..."
+                    rows={3}
                     data-testid="textarea-cfp-message"
                   />
                 </div>
+              </div>
+
+              {/* CFP Period */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">CFP Period</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Min Duration (minutes)</Label>
+                    <Label htmlFor="start-date">Start Date</Label>
                     <Input
+                      id="start-date"
+                      type="date"
+                      value={formData.startDate ? formData.startDate.toISOString().split('T')[0] : ""}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value ? new Date(e.target.value) : null })}
+                      data-testid="input-cfp-start-date"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="end-date">End Date</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={formData.endDate ? formData.endDate.toISOString().split('T')[0] : ""}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value ? new Date(e.target.value) : null })}
+                      data-testid="input-cfp-end-date"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Submission Guidelines */}
+              <div>
+                <Label htmlFor="guidelines">Submission Guidelines</Label>
+                <Textarea
+                  id="guidelines"
+                  value={formData.submissionGuidelines}
+                  onChange={(e) => setFormData({ ...formData, submissionGuidelines: e.target.value })}
+                  placeholder="Enter guidelines for speakers submitting proposals..."
+                  rows={4}
+                  data-testid="textarea-cfp-guidelines"
+                />
+              </div>
+
+              {/* Evaluation Criteria */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">Evaluation Criteria</h3>
+                {formData.evaluationCriteria.length > 0 && (
+                  <div className="space-y-2">
+                    {formData.evaluationCriteria.map((criterion, index) => (
+                      <div key={index} className="flex items-start gap-2 p-3 border rounded-lg" data-testid={`criterion-${index}`}>
+                        <div className="flex-1">
+                          <div className="font-medium">{criterion.name}</div>
+                          <div className="text-sm text-muted-foreground">{criterion.description}</div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => removeCriterion(index)}
+                          data-testid={`button-remove-criterion-${index}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Criterion name (e.g., Relevance)"
+                    value={criterionInput.name}
+                    onChange={(e) => setCriterionInput({ ...criterionInput, name: e.target.value })}
+                    data-testid="input-criterion-name"
+                  />
+                  <Input
+                    placeholder="Criterion description"
+                    value={criterionInput.description}
+                    onChange={(e) => setCriterionInput({ ...criterionInput, description: e.target.value })}
+                    data-testid="input-criterion-description"
+                  />
+                  <Button onClick={addCriterion} variant="outline" className="w-full" data-testid="button-add-criterion">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Criterion
+                  </Button>
+                </div>
+              </div>
+
+              {/* Allowed Tracks */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">Allowed Tracks</h3>
+                {formData.allowedTracks.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.allowedTracks.map((track, index) => (
+                      <Badge key={index} variant="secondary" className="gap-1" data-testid={`track-badge-${index}`}>
+                        {track}
+                        <button onClick={() => removeTrack(track)} className="ml-1 hover:text-destructive" data-testid={`button-remove-track-${index}`}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add track (e.g., Design Thinking)"
+                    value={trackInput}
+                    onChange={(e) => setTrackInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTrack())}
+                    data-testid="input-track"
+                  />
+                  <Button onClick={addTrack} variant="outline" data-testid="button-add-track">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Allowed Session Types */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">Allowed Session Types</h3>
+                {formData.allowedSessionTypes.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.allowedSessionTypes.map((type, index) => (
+                      <Badge key={index} variant="secondary" className="gap-1" data-testid={`session-type-badge-${index}`}>
+                        {type}
+                        <button onClick={() => removeSessionType(type)} className="ml-1 hover:text-destructive" data-testid={`button-remove-session-type-${index}`}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add session type (e.g., Workshop)"
+                    value={sessionTypeInput}
+                    onChange={(e) => setSessionTypeInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSessionType())}
+                    data-testid="input-session-type"
+                  />
+                  <Button onClick={addSessionType} variant="outline" data-testid="button-add-session-type">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Duration Limits */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">Duration Limits</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="min-duration">Min Duration (minutes)</Label>
+                    <Input
+                      id="min-duration"
                       type="number"
-                      defaultValue={settings?.minDuration || 15}
+                      value={formData.minDuration}
+                      onChange={(e) => setFormData({ ...formData, minDuration: parseInt(e.target.value) || 15 })}
                       data-testid="input-cfp-min-duration"
                     />
                   </div>
                   <div>
-                    <Label>Max Duration (minutes)</Label>
+                    <Label htmlFor="max-duration">Max Duration (minutes)</Label>
                     <Input
+                      id="max-duration"
                       type="number"
-                      defaultValue={settings?.maxDuration || 90}
+                      value={formData.maxDuration}
+                      onChange={(e) => setFormData({ ...formData, maxDuration: parseInt(e.target.value) || 90 })}
                       data-testid="input-cfp-max-duration"
                     />
                   </div>
                 </div>
-                <Button className="w-full" data-testid="button-save-cfp-settings">
-                  Save CFP Settings
-                </Button>
               </div>
+
+              {/* Save Button */}
+              <Button 
+                className="w-full" 
+                onClick={handleSave}
+                disabled={updateMutation.isPending}
+                data-testid="button-save-cfp-settings"
+              >
+                {updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save CFP Settings"
+                )}
+              </Button>
             </div>
           )}
         </CardContent>

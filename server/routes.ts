@@ -696,6 +696,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(settings);
   });
 
+  // Public CFP Settings (no auth required)
+  app.get("/api/cfp-settings", async (req, res) => {
+    const settings = await storage.getCfpSettings();
+    res.json(settings || null);
+  });
+
   // Admin routes - Ticket Options
   app.get("/api/admin/ticket-options", requireAdmin, async (req, res) => {
     const options = await storage.getAllTicketOptions();
