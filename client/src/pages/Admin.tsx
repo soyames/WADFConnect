@@ -35,7 +35,14 @@ export default function Admin() {
   }, [userData, setLocation]);
 
   // Fetch real stats
-  const { data: statsData } = useQuery({
+  const { data: statsData } = useQuery<{
+    totalRevenue: number;
+    ticketsSold: number;
+    totalProposals: number;
+    pendingProposals: number;
+    averageRating: number;
+    totalSessions: number;
+  }>({
     queryKey: ["/api/stats"],
     enabled: userData?.role === "organizer" || userData?.role === "admin"
   });
@@ -49,10 +56,13 @@ export default function Admin() {
   // Review proposal mutation
   const reviewProposal = useMutation({
     mutationFn: async ({ id, status, reviewNotes }: { id: string; status: string; reviewNotes?: string }) => {
-      return apiRequest(`/api/proposals/${id}/status`, {
+      const response = await fetch(`/api/proposals/${id}/status`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, reviewNotes })
       });
+      if (!response.ok) throw new Error("Failed to update proposal");
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/proposals"] });
