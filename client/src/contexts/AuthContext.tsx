@@ -40,12 +40,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCurrentUser(user);
       
       if (user) {
-        // Fetch user data from backend
+        // Fetch user data from backend using Firebase UID
         try {
-          const response = await fetch(`/api/users/${user.uid}`);
+          const response = await fetch(`/api/users/firebase/${user.uid}`);
           if (response.ok) {
             const data = await response.json();
             setUserData(data);
+          } else if (response.status === 404) {
+            // User exists in Firebase but not in database - create record
+            console.log("Creating user record in database...");
+            const createResponse = await fetch("/api/users", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: user.email,
+                name: user.displayName || user.email?.split('@')[0] || "User",
+                firebaseUid: user.uid,
+                role: "attendee"
+              }),
+            });
+            
+            if (createResponse.ok) {
+              const createdUser = await createResponse.json();
+              setUserData(createdUser);
+            }
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
