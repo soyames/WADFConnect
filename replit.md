@@ -11,10 +11,10 @@ The West African Design Forum platform is a full-stack event management system f
 - ✅ Session attendance tracking and rating system
 - ✅ Certificate generation with PDF download (jsPDF + html2canvas)
 - ✅ **PWA capabilities:** Offline support, installable app, service worker caching
-- ✅ **Networking features:** Connections system, messaging infrastructure (backend complete)
+- ✅ **Networking features:** Full UI and backend - user directory, connections, messaging
 - ✅ **Multi-language support:** English, French, Portuguese with i18next
-- ✅ **Calendar integration:** .ics file generation, Google Calendar & Outlook links
-- 🚧 Advanced analytics dashboard, networking UI in backlog
+- ✅ **Calendar integration:** Complete UI with .ics download, Google Calendar & Outlook links
+- 🚧 Advanced analytics dashboard in backlog
 
 ## User Preferences
 
@@ -75,11 +75,13 @@ The application implements a custom design system based on "Modern Africana with
   - Comprehensive translations for all UI elements
 
 - **Calendar Integration:**
+  - Complete UI on Agenda page with dropdown menu for each session
   - .ics file generation for session downloads
   - Google Calendar deep links for one-click add
   - Outlook Calendar integration
   - Timezone-aware event creation
   - Reminder notifications (30 minutes before session)
+  - Utilities in `/client/src/utils/calendar.ts` for export functionality
 
 ### Backend Architecture
 

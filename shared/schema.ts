@@ -293,3 +293,91 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
+
+// Analytics: Revenue Snapshots (aggregated daily revenue data)
+export const revenueSnapshots = pgTable("revenue_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: timestamp("date").notNull(),
+  totalRevenue: integer("total_revenue").notNull().default(0), // in cents
+  ticketRevenue: integer("ticket_revenue").notNull().default(0), // in cents
+  sponsorshipRevenue: integer("sponsorship_revenue").notNull().default(0), // in cents
+  ticketsSold: integer("tickets_sold").notNull().default(0),
+  sponsorshipsCount: integer("sponsorships_count").notNull().default(0),
+  earlyBirdSold: integer("early_bird_sold").notNull().default(0),
+  regularSold: integer("regular_sold").notNull().default(0),
+  vipSold: integer("vip_sold").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertRevenueSnapshotSchema = createInsertSchema(revenueSnapshots).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRevenueSnapshot = z.infer<typeof insertRevenueSnapshotSchema>;
+export type RevenueSnapshot = typeof revenueSnapshots.$inferSelect;
+
+// Analytics: Engagement Metrics (daily user engagement data)
+export const engagementMetrics = pgTable("engagement_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: timestamp("date").notNull(),
+  activeUsers: integer("active_users").notNull().default(0),
+  sessionAttendance: integer("session_attendance").notNull().default(0), // total attendance records
+  ratingsSubmitted: integer("ratings_submitted").notNull().default(0),
+  connectionsCreated: integer("connections_created").notNull().default(0),
+  messagesSent: integer("messages_sent").notNull().default(0),
+  certificatesIssued: integer("certificates_issued").notNull().default(0),
+  topSession: text("top_session"), // session ID with most attendance
+  topSessionAttendance: integer("top_session_attendance").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertEngagementMetricSchema = createInsertSchema(engagementMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertEngagementMetric = z.infer<typeof insertEngagementMetricSchema>;
+export type EngagementMetric = typeof engagementMetrics.$inferSelect;
+
+// Analytics: Sponsor ROI Tracking
+export const sponsorMetrics = pgTable("sponsor_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sponsorshipId: varchar("sponsorship_id").notNull().references(() => sponsorships.id),
+  date: timestamp("date").notNull(),
+  profileViews: integer("profile_views").notNull().default(0),
+  websiteClicks: integer("website_clicks").notNull().default(0),
+  logoImpressions: integer("logo_impressions").notNull().default(0),
+  attendeeConnections: integer("attendee_connections").notNull().default(0), // connections made with sponsor reps
+  sessionAttendance: integer("session_attendance").notNull().default(0), // if sponsor has speaking session
+  leadsCaptured: integer("leads_captured").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSponsorMetricSchema = createInsertSchema(sponsorMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSponsorMetric = z.infer<typeof insertSponsorMetricSchema>;
+export type SponsorMetric = typeof sponsorMetrics.$inferSelect;
+
+// Analytics: Session Performance (detailed session analytics)
+export const sessionMetrics = pgTable("session_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => sessions.id),
+  attendanceCount: integer("attendance_count").notNull().default(0),
+  averageRating: integer("average_rating"), // 1-5 scale
+  totalRatings: integer("total_ratings").notNull().default(0),
+  engagementScore: integer("engagement_score").notNull().default(0), // calculated score
+  completionRate: integer("completion_rate").default(0), // percentage of attendees who rated
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSessionMetricSchema = createInsertSchema(sessionMetrics).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertSessionMetric = z.infer<typeof insertSessionMetricSchema>;
+export type SessionMetric = typeof sessionMetrics.$inferSelect;
