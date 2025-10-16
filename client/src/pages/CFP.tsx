@@ -10,11 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Lightbulb, CheckCircle2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 
 export default function CFP() {
   const { currentUser } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -31,8 +33,8 @@ export default function CFP() {
     
     if (!currentUser) {
       toast({
-        title: "Sign in required",
-        description: "Please sign in to submit a proposal.",
+        title: t("cfp.signInRequired"),
+        description: t("cfp.signInToSubmit"),
         variant: "destructive",
       });
       setLocation("/login");
@@ -47,12 +49,12 @@ export default function CFP() {
       
       setSubmitted(true);
       toast({
-        title: "Proposal submitted!",
-        description: "We'll review your proposal and get back to you soon.",
+        title: t("cfp.submitted"),
+        description: t("cfp.submittedDescription"),
       });
     } catch (error: any) {
       toast({
-        title: "Submission failed",
+        title: t("common.error"),
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -69,9 +71,9 @@ export default function CFP() {
             <div className="mx-auto mb-4 p-4 rounded-full bg-chart-3/10 w-fit">
               <CheckCircle2 className="h-12 w-12 text-chart-3" />
             </div>
-            <CardTitle className="text-2xl">Proposal Submitted!</CardTitle>
+            <CardTitle className="text-2xl">{t("cfp.submitted")}</CardTitle>
             <CardDescription>
-              Thank you for your submission. Our team will review your proposal and notify you of the decision.
+              {t("cfp.submittedDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -87,7 +89,7 @@ export default function CFP() {
                 className="w-full"
                 data-testid="button-view-agenda"
               >
-                View Conference Agenda
+                {t("agenda.title")}
               </Button>
             </div>
           </CardContent>
@@ -102,44 +104,44 @@ export default function CFP() {
         <div className="text-center mb-12">
           <Badge className="mb-4 gap-2" variant="outline" data-testid="badge-cfp">
             <Lightbulb className="h-3 w-3" />
-            Call for Proposals
+            {t("cfp.title")}
           </Badge>
           <h1 className="font-serif text-5xl md:text-6xl font-bold mb-6">
-            Share Your <span className="text-primary">Expertise</span>
+            {t("cfp.badge")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Submit your session proposal and join our community of speakers shaping the future of West African design.
+            {t("cfp.subtitle")}
           </p>
         </div>
 
         <Card data-testid="card-cfp-form">
           <CardHeader>
-            <CardTitle>Proposal Details</CardTitle>
+            <CardTitle>{t("cfp.formTitle")}</CardTitle>
             <CardDescription>
-              Tell us about the session you'd like to present at WADF 2025
+              {t("cfp.formDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="title">Session Title *</Label>
+                <Label htmlFor="title">{t("cfp.sessionTitle")} *</Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g., The Future of African Design Systems"
+                  placeholder={t("cfp.sessionTitlePlaceholder")}
                   required
                   data-testid="input-title"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description">{t("cfp.description")} *</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe your session, what attendees will learn, and why it matters..."
+                  placeholder={t("cfp.descriptionPlaceholder")}
                   rows={6}
                   required
                   data-testid="input-description"
@@ -151,52 +153,52 @@ export default function CFP() {
 
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="track">Track *</Label>
+                  <Label htmlFor="track">{t("cfp.track")} *</Label>
                   <Select 
                     value={formData.track} 
                     onValueChange={(value) => setFormData({ ...formData, track: value })}
                     required
                   >
                     <SelectTrigger data-testid="select-track">
-                      <SelectValue placeholder="Select a track" />
+                      <SelectValue placeholder={t("cfp.trackPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="design-thinking">Design Thinking</SelectItem>
-                      <SelectItem value="innovation">Innovation</SelectItem>
-                      <SelectItem value="technology">Technology</SelectItem>
-                      <SelectItem value="culture">Culture & Heritage</SelectItem>
+                      <SelectItem value="design-thinking">{t("cfp.trackDesign")}</SelectItem>
+                      <SelectItem value="innovation">{t("cfp.trackInnovation")}</SelectItem>
+                      <SelectItem value="technology">{t("cfp.trackTechnology")}</SelectItem>
+                      <SelectItem value="culture">{t("cfp.trackCulture")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sessionType">Session Type *</Label>
+                  <Label htmlFor="sessionType">{t("cfp.sessionType")} *</Label>
                   <Select 
                     value={formData.sessionType} 
                     onValueChange={(value) => setFormData({ ...formData, sessionType: value })}
                     required
                   >
                     <SelectTrigger data-testid="select-session-type">
-                      <SelectValue placeholder="Select session type" />
+                      <SelectValue placeholder={t("cfp.sessionTypePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="talk">Talk (Presentation)</SelectItem>
-                      <SelectItem value="workshop">Workshop (Hands-on)</SelectItem>
-                      <SelectItem value="panel">Panel Discussion</SelectItem>
+                      <SelectItem value="talk">{t("cfp.typeTalk")}</SelectItem>
+                      <SelectItem value="workshop">{t("cfp.typeWorkshop")}</SelectItem>
+                      <SelectItem value="panel">{t("cfp.typePanel")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration *</Label>
+                <Label htmlFor="duration">{t("cfp.duration")} *</Label>
                 <Select 
                   value={formData.duration} 
                   onValueChange={(value) => setFormData({ ...formData, duration: value })}
                   required
                 >
                   <SelectTrigger data-testid="select-duration">
-                    <SelectValue placeholder="Select duration" />
+                    <SelectValue placeholder={t("cfp.duration")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30">30 minutes</SelectItem>
@@ -235,12 +237,12 @@ export default function CFP() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
+                    {t("cfp.submitting")}
                   </>
                 ) : !currentUser ? (
-                  "Sign In to Submit"
+                  t("cfp.signInToSubmit")
                 ) : (
-                  "Submit Proposal"
+                  t("cfp.submit")
                 )}
               </Button>
 
@@ -253,7 +255,7 @@ export default function CFP() {
                     className="text-primary hover:underline font-medium"
                     data-testid="link-register"
                   >
-                    Buy a ticket to register
+                    {t("tickets.title")}
                   </button>
                 </p>
               )}
