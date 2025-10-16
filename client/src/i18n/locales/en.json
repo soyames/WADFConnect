@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "tickets": "Tickets",
+    "speakers": "Speakers (CFP)",
+    "sponsors": "Sponsors",
+    "agenda": "Agenda",
+    "faq": "FAQ",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "hero": {
+    "title": "West African Design Forum",
+    "subtitle": "Empowering Design Innovation Across West Africa",
+    "date": "June 15-16, 2025 • Accra, Ghana",
+    "registerNow": "Register Now",
+    "viewAgenda": "View Agenda"
+  },
+  "tickets": {
+    "title": "Get Your Tickets",
+    "earlyBird": "Early Bird",
+    "regularPass": "Regular Pass",
+    "vipPass": "VIP Pass",
+    "purchaseTicket": "Purchase Ticket"
+  },
+  "agenda": {
+    "title": "Conference Agenda",
+    "myAgenda": "My Agenda",
+    "allSessions": "All Sessions",
+    "attending": "Attending",
+    "notAttending": "Not Attending",
+    "markAttending": "Mark as Attending",
+    "rateSession": "Rate Session"
+  },
+  "certificate": {
+    "title": "Your Certificate",
+    "download": "Download Certificate",
+    "sessionsAttended": "Sessions Attended",
+    "noSessions": "You need to attend at least one session to receive a certificate"
+  },
+  "networking": {
+    "title": "Networking",
+    "connections": "Connections",
+    "messages": "Messages",
+    "sendMessage": "Send Message",
+    "connect": "Connect",
+    "pending": "Pending",
+    "accepted": "Connected"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "submit": "Submit"
+  }
+}

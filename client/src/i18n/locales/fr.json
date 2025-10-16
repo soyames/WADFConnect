@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "about": "À propos",
+    "tickets": "Billets",
+    "speakers": "Orateurs (CFP)",
+    "sponsors": "Sponsors",
+    "agenda": "Agenda",
+    "faq": "FAQ",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter"
+  },
+  "hero": {
+    "title": "Forum de Design d'Afrique de l'Ouest",
+    "subtitle": "Renforcer l'innovation en design à travers l'Afrique de l'Ouest",
+    "date": "15-16 juin 2025 • Accra, Ghana",
+    "registerNow": "S'inscrire maintenant",
+    "viewAgenda": "Voir l'agenda"
+  },
+  "tickets": {
+    "title": "Obtenez vos billets",
+    "earlyBird": "Tarif anticipé",
+    "regularPass": "Pass régulier",
+    "vipPass": "Pass VIP",
+    "purchaseTicket": "Acheter un billet"
+  },
+  "agenda": {
+    "title": "Agenda de la conférence",
+    "myAgenda": "Mon agenda",
+    "allSessions": "Toutes les sessions",
+    "attending": "Participera",
+    "notAttending": "Ne participera pas",
+    "markAttending": "Marquer comme participant",
+    "rateSession": "Évaluer la session"
+  },
+  "certificate": {
+    "title": "Votre certificat",
+    "download": "Télécharger le certificat",
+    "sessionsAttended": "Sessions assistées",
+    "noSessions": "Vous devez assister à au moins une session pour recevoir un certificat"
+  },
+  "networking": {
+    "title": "Réseautage",
+    "connections": "Connexions",
+    "messages": "Messages",
+    "sendMessage": "Envoyer un message",
+    "connect": "Connecter",
+    "pending": "En attente",
+    "accepted": "Connecté"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "submit": "Soumettre"
+  }
+}

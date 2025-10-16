@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "home": "Início",
+    "about": "Sobre",
+    "tickets": "Ingressos",
+    "speakers": "Palestrantes (CFP)",
+    "sponsors": "Patrocinadores",
+    "agenda": "Agenda",
+    "faq": "Perguntas Frequentes",
+    "signIn": "Entrar",
+    "signOut": "Sair"
+  },
+  "hero": {
+    "title": "Fórum de Design da África Ocidental",
+    "subtitle": "Capacitando a Inovação em Design na África Ocidental",
+    "date": "15-16 de junho de 2025 • Accra, Gana",
+    "registerNow": "Registre-se Agora",
+    "viewAgenda": "Ver Agenda"
+  },
+  "tickets": {
+    "title": "Adquira seus Ingressos",
+    "earlyBird": "Pré-venda",
+    "regularPass": "Passe Regular",
+    "vipPass": "Passe VIP",
+    "purchaseTicket": "Comprar Ingresso"
+  },
+  "agenda": {
+    "title": "Agenda da Conferência",
+    "myAgenda": "Minha Agenda",
+    "allSessions": "Todas as Sessões",
+    "attending": "Participarei",
+    "notAttending": "Não participarei",
+    "markAttending": "Marcar como Participante",
+    "rateSession": "Avaliar Sessão"
+  },
+  "certificate": {
+    "title": "Seu Certificado",
+    "download": "Baixar Certificado",
+    "sessionsAttended": "Sessões Participadas",
+    "noSessions": "Você precisa participar de pelo menos uma sessão para receber um certificado"
+  },
+  "networking": {
+    "title": "Networking",
+    "connections": "Conexões",
+    "messages": "Mensagens",
+    "sendMessage": "Enviar Mensagem",
+    "connect": "Conectar",
+    "pending": "Pendente",
+    "accepted": "Conectado"
+  },
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "submit": "Enviar"
+  }
+}

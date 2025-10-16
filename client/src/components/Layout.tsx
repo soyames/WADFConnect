@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X, User, LogOut, LayoutDashboard, Ticket, Award } from "lucide-react";
 import { useState } from "react";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -74,6 +75,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Auth Section */}
             <div className="flex items-center gap-3">
+              <LanguageSwitcher />
               {currentUser ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
