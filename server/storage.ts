@@ -31,6 +31,22 @@ import {
   type InsertSponsorMetric,
   type SessionMetric,
   type InsertSessionMetric,
+  type TeamMember,
+  type InsertTeamMember,
+  type CfpSetting,
+  type InsertCfpSetting,
+  type TicketOption,
+  type InsertTicketOption,
+  type SponsorshipPackage,
+  type InsertSponsorshipPackage,
+  type PageSetting,
+  type InsertPageSetting,
+  type Task,
+  type InsertTask,
+  type ProposalEvaluator,
+  type InsertProposalEvaluator,
+  type ProposalEvaluation,
+  type InsertProposalEvaluation,
   users,
   tickets,
   proposals,
@@ -46,7 +62,15 @@ import {
   revenueSnapshots,
   engagementMetrics,
   sponsorMetrics,
-  sessionMetrics
+  sessionMetrics,
+  teamMembers,
+  cfpSettings,
+  ticketOptions,
+  sponsorshipPackages,
+  pageSettings,
+  tasks,
+  proposalEvaluators,
+  proposalEvaluations
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, avg, count } from "drizzle-orm";
@@ -136,6 +160,56 @@ export interface IStorage {
   getSessionMetrics(sessionId: string): Promise<SessionMetric | undefined>;
   getAllSessionMetrics(): Promise<SessionMetric[]>;
   updateSessionMetrics(sessionId: string): Promise<void>;
+
+  // Team Members
+  getAllTeamMembers(): Promise<TeamMember[]>;
+  getTeamMember(id: string): Promise<TeamMember | undefined>;
+  createTeamMember(teamMember: InsertTeamMember): Promise<TeamMember>;
+  updateTeamMember(id: string, updates: Partial<TeamMember>): Promise<TeamMember | undefined>;
+  deleteTeamMember(id: string): Promise<boolean>;
+
+  // CFP Settings
+  getCfpSettings(): Promise<CfpSetting | undefined>;
+  updateCfpSettings(updates: Partial<CfpSetting>): Promise<CfpSetting>;
+
+  // Ticket Options
+  getAllTicketOptions(): Promise<TicketOption[]>;
+  getTicketOption(id: string): Promise<TicketOption | undefined>;
+  createTicketOption(ticketOption: InsertTicketOption): Promise<TicketOption>;
+  updateTicketOption(id: string, updates: Partial<TicketOption>): Promise<TicketOption | undefined>;
+  deleteTicketOption(id: string): Promise<boolean>;
+
+  // Sponsorship Packages
+  getAllSponsorshipPackages(): Promise<SponsorshipPackage[]>;
+  getSponsorshipPackage(id: string): Promise<SponsorshipPackage | undefined>;
+  createSponsorshipPackage(pkg: InsertSponsorshipPackage): Promise<SponsorshipPackage>;
+  updateSponsorshipPackage(id: string, updates: Partial<SponsorshipPackage>): Promise<SponsorshipPackage | undefined>;
+  deleteSponsorshipPackage(id: string): Promise<boolean>;
+
+  // Page Settings
+  getAllPageSettings(): Promise<PageSetting[]>;
+  getPageSetting(pageName: string): Promise<PageSetting | undefined>;
+  updatePageSetting(pageName: string, updates: Partial<PageSetting>): Promise<PageSetting>;
+
+  // Tasks
+  getAllTasks(): Promise<Task[]>;
+  getTask(id: string): Promise<Task | undefined>;
+  createTask(task: InsertTask): Promise<Task>;
+  updateTask(id: string, updates: Partial<Task>): Promise<Task | undefined>;
+  deleteTask(id: string): Promise<boolean>;
+
+  // Proposal Evaluators
+  getAllProposalEvaluators(): Promise<ProposalEvaluator[]>;
+  getProposalEvaluator(id: string): Promise<ProposalEvaluator | undefined>;
+  createProposalEvaluator(evaluator: InsertProposalEvaluator): Promise<ProposalEvaluator>;
+  updateProposalEvaluator(id: string, updates: Partial<ProposalEvaluator>): Promise<ProposalEvaluator | undefined>;
+  deleteProposalEvaluator(id: string): Promise<boolean>;
+
+  // Proposal Evaluations
+  getProposalEvaluations(proposalId: string): Promise<ProposalEvaluation[]>;
+  getEvaluatorEvaluations(evaluatorId: string): Promise<ProposalEvaluation[]>;
+  createProposalEvaluation(evaluation: InsertProposalEvaluation): Promise<ProposalEvaluation>;
+  updateProposalEvaluation(id: string, updates: Partial<ProposalEvaluation>): Promise<ProposalEvaluation | undefined>;
 }
 
 export class DrizzleStorage implements IStorage {
@@ -590,6 +664,188 @@ export class DrizzleStorage implements IStorage {
         completionRate
       });
     }
+  }
+
+  // Team Members
+  async getAllTeamMembers(): Promise<TeamMember[]> {
+    return await db.select().from(teamMembers);
+  }
+
+  async getTeamMember(id: string): Promise<TeamMember | undefined> {
+    const result = await db.select().from(teamMembers).where(eq(teamMembers.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createTeamMember(insertTeamMember: InsertTeamMember): Promise<TeamMember> {
+    const result = await db.insert(teamMembers).values(insertTeamMember).returning();
+    return result[0];
+  }
+
+  async updateTeamMember(id: string, updates: Partial<TeamMember>): Promise<TeamMember | undefined> {
+    const result = await db.update(teamMembers).set(updates).where(eq(teamMembers.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteTeamMember(id: string): Promise<boolean> {
+    const result = await db.delete(teamMembers).where(eq(teamMembers.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // CFP Settings
+  async getCfpSettings(): Promise<CfpSetting | undefined> {
+    const result = await db.select().from(cfpSettings).limit(1);
+    return result[0];
+  }
+
+  async updateCfpSettings(updates: Partial<CfpSetting>): Promise<CfpSetting> {
+    const existing = await this.getCfpSettings();
+    if (existing) {
+      const result = await db.update(cfpSettings).set({ ...updates, updatedAt: new Date() }).where(eq(cfpSettings.id, existing.id)).returning();
+      return result[0];
+    } else {
+      const result = await db.insert(cfpSettings).values(updates as any).returning();
+      return result[0];
+    }
+  }
+
+  // Ticket Options
+  async getAllTicketOptions(): Promise<TicketOption[]> {
+    return await db.select().from(ticketOptions);
+  }
+
+  async getTicketOption(id: string): Promise<TicketOption | undefined> {
+    const result = await db.select().from(ticketOptions).where(eq(ticketOptions.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createTicketOption(insertTicketOption: InsertTicketOption): Promise<TicketOption> {
+    const result = await db.insert(ticketOptions).values(insertTicketOption).returning();
+    return result[0];
+  }
+
+  async updateTicketOption(id: string, updates: Partial<TicketOption>): Promise<TicketOption | undefined> {
+    const result = await db.update(ticketOptions).set({ ...updates, updatedAt: new Date() }).where(eq(ticketOptions.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteTicketOption(id: string): Promise<boolean> {
+    const result = await db.delete(ticketOptions).where(eq(ticketOptions.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Sponsorship Packages
+  async getAllSponsorshipPackages(): Promise<SponsorshipPackage[]> {
+    return await db.select().from(sponsorshipPackages);
+  }
+
+  async getSponsorshipPackage(id: string): Promise<SponsorshipPackage | undefined> {
+    const result = await db.select().from(sponsorshipPackages).where(eq(sponsorshipPackages.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createSponsorshipPackage(insertPackage: InsertSponsorshipPackage): Promise<SponsorshipPackage> {
+    const result = await db.insert(sponsorshipPackages).values(insertPackage).returning();
+    return result[0];
+  }
+
+  async updateSponsorshipPackage(id: string, updates: Partial<SponsorshipPackage>): Promise<SponsorshipPackage | undefined> {
+    const result = await db.update(sponsorshipPackages).set({ ...updates, updatedAt: new Date() }).where(eq(sponsorshipPackages.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteSponsorshipPackage(id: string): Promise<boolean> {
+    const result = await db.delete(sponsorshipPackages).where(eq(sponsorshipPackages.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Page Settings
+  async getAllPageSettings(): Promise<PageSetting[]> {
+    return await db.select().from(pageSettings);
+  }
+
+  async getPageSetting(pageName: string): Promise<PageSetting | undefined> {
+    const result = await db.select().from(pageSettings).where(eq(pageSettings.pageName, pageName)).limit(1);
+    return result[0];
+  }
+
+  async updatePageSetting(pageName: string, updates: Partial<PageSetting>): Promise<PageSetting> {
+    const existing = await this.getPageSetting(pageName);
+    if (existing) {
+      const result = await db.update(pageSettings).set({ ...updates, updatedAt: new Date() }).where(eq(pageSettings.pageName, pageName)).returning();
+      return result[0];
+    } else {
+      const result = await db.insert(pageSettings).values({ pageName, ...updates } as any).returning();
+      return result[0];
+    }
+  }
+
+  // Tasks
+  async getAllTasks(): Promise<Task[]> {
+    return await db.select().from(tasks);
+  }
+
+  async getTask(id: string): Promise<Task | undefined> {
+    const result = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const result = await db.insert(tasks).values(insertTask).returning();
+    return result[0];
+  }
+
+  async updateTask(id: string, updates: Partial<Task>): Promise<Task | undefined> {
+    const result = await db.update(tasks).set(updates).where(eq(tasks.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteTask(id: string): Promise<boolean> {
+    const result = await db.delete(tasks).where(eq(tasks.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Proposal Evaluators
+  async getAllProposalEvaluators(): Promise<ProposalEvaluator[]> {
+    return await db.select().from(proposalEvaluators);
+  }
+
+  async getProposalEvaluator(id: string): Promise<ProposalEvaluator | undefined> {
+    const result = await db.select().from(proposalEvaluators).where(eq(proposalEvaluators.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createProposalEvaluator(insertEvaluator: InsertProposalEvaluator): Promise<ProposalEvaluator> {
+    const result = await db.insert(proposalEvaluators).values(insertEvaluator).returning();
+    return result[0];
+  }
+
+  async updateProposalEvaluator(id: string, updates: Partial<ProposalEvaluator>): Promise<ProposalEvaluator | undefined> {
+    const result = await db.update(proposalEvaluators).set(updates).where(eq(proposalEvaluators.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteProposalEvaluator(id: string): Promise<boolean> {
+    const result = await db.delete(proposalEvaluators).where(eq(proposalEvaluators.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Proposal Evaluations
+  async getProposalEvaluations(proposalId: string): Promise<ProposalEvaluation[]> {
+    return await db.select().from(proposalEvaluations).where(eq(proposalEvaluations.proposalId, proposalId));
+  }
+
+  async getEvaluatorEvaluations(evaluatorId: string): Promise<ProposalEvaluation[]> {
+    return await db.select().from(proposalEvaluations).where(eq(proposalEvaluations.evaluatorId, evaluatorId));
+  }
+
+  async createProposalEvaluation(insertEvaluation: InsertProposalEvaluation): Promise<ProposalEvaluation> {
+    const result = await db.insert(proposalEvaluations).values(insertEvaluation).returning();
+    return result[0];
+  }
+
+  async updateProposalEvaluation(id: string, updates: Partial<ProposalEvaluation>): Promise<ProposalEvaluation | undefined> {
+    const result = await db.update(proposalEvaluations).set(updates).where(eq(proposalEvaluations.id, id)).returning();
+    return result[0];
   }
 }
 

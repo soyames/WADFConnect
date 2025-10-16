@@ -12,10 +12,34 @@ import {
   insertCertificateSchema,
   insertConnectionSchema,
   insertConversationSchema,
-  insertMessageSchema
+  insertMessageSchema,
+  insertTeamMemberSchema,
+  insertCfpSettingSchema,
+  insertTicketOptionSchema,
+  insertSponsorshipPackageSchema,
+  insertPageSettingSchema,
+  insertTaskSchema,
+  insertProposalEvaluatorSchema,
+  insertProposalEvaluationSchema
 } from "@shared/schema";
+import type { Request, Response, NextFunction } from "express";
 import path from "path";
 import fs from "fs";
+
+// Admin authorization middleware
+const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.headers['x-user-id'] as string;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  
+  const user = await storage.getUser(userId);
+  if (!user || (user.role !== "admin" && user.role !== "organizer")) {
+    return res.status(403).json({ error: "Forbidden: Admin access required" });
+  }
+  
+  next();
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve manifest.json for PWA
@@ -591,6 +615,208 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/analytics/sessions/:sessionId/update", async (req, res) => {
     await storage.updateSessionMetrics(req.params.sessionId);
     res.sendStatus(200);
+  });
+
+  // Admin routes - Team Members
+  app.get("/api/admin/team-members", requireAdmin, async (req, res) => {
+    const teamMembers = await storage.getAllTeamMembers();
+    res.json(teamMembers);
+  });
+
+  app.post("/api/admin/team-members", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertTeamMemberSchema.parse(req.body);
+      const teamMember = await storage.createTeamMember(validatedData);
+      res.json(teamMember);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/team-members/:id", requireAdmin, async (req, res) => {
+    const teamMember = await storage.updateTeamMember(req.params.id, req.body);
+    if (!teamMember) {
+      return res.status(404).json({ error: "Team member not found" });
+    }
+    res.json(teamMember);
+  });
+
+  app.delete("/api/admin/team-members/:id", requireAdmin, async (req, res) => {
+    const success = await storage.deleteTeamMember(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Team member not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // Admin routes - CFP Settings
+  app.get("/api/admin/cfp-settings", requireAdmin, async (req, res) => {
+    const settings = await storage.getCfpSettings();
+    res.json(settings || null);
+  });
+
+  app.post("/api/admin/cfp-settings", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertCfpSettingSchema.parse(req.body);
+      const settings = await storage.updateCfpSettings(validatedData);
+      res.json(settings);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/cfp-settings", requireAdmin, async (req, res) => {
+    const settings = await storage.updateCfpSettings(req.body);
+    res.json(settings);
+  });
+
+  // Admin routes - Ticket Options
+  app.get("/api/admin/ticket-options", requireAdmin, async (req, res) => {
+    const options = await storage.getAllTicketOptions();
+    res.json(options);
+  });
+
+  app.post("/api/admin/ticket-options", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertTicketOptionSchema.parse(req.body);
+      const option = await storage.createTicketOption(validatedData);
+      res.json(option);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/ticket-options/:id", requireAdmin, async (req, res) => {
+    const option = await storage.updateTicketOption(req.params.id, req.body);
+    if (!option) {
+      return res.status(404).json({ error: "Ticket option not found" });
+    }
+    res.json(option);
+  });
+
+  app.delete("/api/admin/ticket-options/:id", requireAdmin, async (req, res) => {
+    const success = await storage.deleteTicketOption(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Ticket option not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // Admin routes - Sponsorship Packages
+  app.get("/api/admin/sponsorship-packages", requireAdmin, async (req, res) => {
+    const packages = await storage.getAllSponsorshipPackages();
+    res.json(packages);
+  });
+
+  app.post("/api/admin/sponsorship-packages", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertSponsorshipPackageSchema.parse(req.body);
+      const pkg = await storage.createSponsorshipPackage(validatedData);
+      res.json(pkg);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/sponsorship-packages/:id", requireAdmin, async (req, res) => {
+    const pkg = await storage.updateSponsorshipPackage(req.params.id, req.body);
+    if (!pkg) {
+      return res.status(404).json({ error: "Sponsorship package not found" });
+    }
+    res.json(pkg);
+  });
+
+  app.delete("/api/admin/sponsorship-packages/:id", requireAdmin, async (req, res) => {
+    const success = await storage.deleteSponsorshipPackage(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Sponsorship package not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // Admin routes - Page Settings
+  app.get("/api/admin/page-settings", requireAdmin, async (req, res) => {
+    const settings = await storage.getAllPageSettings();
+    res.json(settings);
+  });
+
+  app.get("/api/admin/page-settings/:pageName", requireAdmin, async (req, res) => {
+    const setting = await storage.getPageSetting(req.params.pageName);
+    res.json(setting || null);
+  });
+
+  app.post("/api/admin/page-settings", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertPageSettingSchema.parse(req.body);
+      const setting = await storage.updatePageSetting(validatedData.pageName, validatedData);
+      res.json(setting);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/page-settings/:pageName", requireAdmin, async (req, res) => {
+    const setting = await storage.updatePageSetting(req.params.pageName, req.body);
+    res.json(setting);
+  });
+
+  // Admin routes - Tasks
+  app.get("/api/admin/tasks", requireAdmin, async (req, res) => {
+    const tasks = await storage.getAllTasks();
+    res.json(tasks);
+  });
+
+  app.post("/api/admin/tasks", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertTaskSchema.parse(req.body);
+      const task = await storage.createTask(validatedData);
+      res.json(task);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/tasks/:id", requireAdmin, async (req, res) => {
+    const task = await storage.updateTask(req.params.id, req.body);
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    res.json(task);
+  });
+
+  app.delete("/api/admin/tasks/:id", requireAdmin, async (req, res) => {
+    const success = await storage.deleteTask(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // Admin routes - Proposal Evaluators
+  app.get("/api/admin/evaluators", requireAdmin, async (req, res) => {
+    const evaluators = await storage.getAllProposalEvaluators();
+    res.json(evaluators);
+  });
+
+  app.post("/api/admin/evaluators", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertProposalEvaluatorSchema.parse(req.body);
+      const evaluator = await storage.createProposalEvaluator(validatedData);
+      res.json(evaluator);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Admin routes - Assign Evaluator to Proposal
+  app.post("/api/admin/assign-evaluator", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertProposalEvaluationSchema.parse(req.body);
+      const evaluation = await storage.createProposalEvaluation(validatedData);
+      res.json(evaluation);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   const httpServer = createServer(app);
