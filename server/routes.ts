@@ -64,6 +64,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users", async (req, res) => {
+    const users = await storage.getAllUsers();
+    res.json(users);
+  });
+
   app.get("/api/users/:id", async (req, res) => {
     const user = await storage.getUser(req.params.id);
     if (!user) {
@@ -244,6 +249,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "Session not found" });
     }
     res.json(session);
+  });
+
+  app.delete("/api/sessions/:id", async (req, res) => {
+    const success = await storage.deleteSession(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Session not found" });
+    }
+    res.json({ success: true });
+  });
+
+  app.post("/api/sessions/bulk-update", async (req, res) => {
+    try {
+      const { updates } = req.body;
+      if (!updates || !Array.isArray(updates)) {
+        return res.status(400).json({ error: "Updates array is required" });
+      }
+      const sessions = await storage.bulkUpdateSessions(updates);
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   // Attendance routes
@@ -817,6 +843,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
+  });
+
+  // Proposal Evaluation routes
+  app.get("/api/evaluations/proposal/:proposalId", async (req, res) => {
+    const evaluations = await storage.getProposalEvaluations(req.params.proposalId);
+    res.json(evaluations);
+  });
+
+  app.get("/api/evaluations/evaluator/:evaluatorId", async (req, res) => {
+    const evaluations = await storage.getEvaluatorEvaluations(req.params.evaluatorId);
+    res.json(evaluations);
+  });
+
+  app.patch("/api/evaluations/:id", async (req, res) => {
+    const evaluation = await storage.updateProposalEvaluation(req.params.id, req.body);
+    if (!evaluation) {
+      return res.status(404).json({ error: "Evaluation not found" });
+    }
+    res.json(evaluation);
+  });
+
+  app.get("/api/proposals/:id/evaluations", async (req, res) => {
+    const evaluations = await storage.getProposalEvaluations(req.params.id);
+    res.json(evaluations);
   });
 
   const httpServer = createServer(app);

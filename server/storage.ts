@@ -80,6 +80,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUserRole(id: string, role: string): Promise<User | undefined>;
 
@@ -110,6 +111,8 @@ export interface IStorage {
   getSessionsByDate(date: string): Promise<Session[]>;
   createSession(session: InsertSession): Promise<Session>;
   updateSession(id: string, updates: Partial<Session>): Promise<Session | undefined>;
+  deleteSession(id: string): Promise<boolean>;
+  bulkUpdateSessions(updates: Array<{ id: string; scheduledDate: Date | null; scheduledTime: string | null; room: string | null }>): Promise<Session[]>;
 
   // Attendance
   markAttendance(attendance: InsertAttendance): Promise<Attendance>;
@@ -227,6 +230,10 @@ export class DrizzleStorage implements IStorage {
   async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid)).limit(1);
     return result[0];
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -348,6 +355,29 @@ export class DrizzleStorage implements IStorage {
   async updateSession(id: string, updates: Partial<Session>): Promise<Session | undefined> {
     const result = await db.update(sessions).set(updates).where(eq(sessions.id, id)).returning();
     return result[0];
+  }
+
+  async deleteSession(id: string): Promise<boolean> {
+    const result = await db.delete(sessions).where(eq(sessions.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async bulkUpdateSessions(updates: Array<{ id: string; scheduledDate: Date | null; scheduledTime: string | null; room: string | null }>): Promise<Session[]> {
+    const results: Session[] = [];
+    for (const update of updates) {
+      const result = await db.update(sessions)
+        .set({
+          scheduledDate: update.scheduledDate,
+          scheduledTime: update.scheduledTime,
+          room: update.room
+        })
+        .where(eq(sessions.id, update.id))
+        .returning();
+      if (result[0]) {
+        results.push(result[0]);
+      }
+    }
+    return results;
   }
 
   // Attendance

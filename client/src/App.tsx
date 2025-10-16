@@ -22,6 +22,7 @@ import Certificate from "@/pages/Certificate";
 import Network from "@/pages/Network";
 import Messages from "@/pages/Messages";
 import Analytics from "@/pages/Analytics";
+import Evaluator from "@/pages/Evaluator";
 
 function Router() {
   return (
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/faq" component={FAQ} />
       <Route path="/admin" component={Admin} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/evaluator" component={Evaluator} />
       <Route path="/payment/callback" component={PaymentCallback} />
       <Route path="/certificate" component={Certificate} />
       <Route path="/network" component={Network} />

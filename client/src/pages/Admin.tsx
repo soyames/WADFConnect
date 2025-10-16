@@ -14,6 +14,12 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   LayoutDashboard,
   FileText,
@@ -44,12 +50,17 @@ import type {
   SponsorshipPackage, 
   PageSetting, 
   Task, 
-  CfpSetting 
+  CfpSetting,
+  Session,
+  User,
+  ProposalEvaluator,
+  ProposalEvaluation
 } from "@shared/schema";
 
 type AdminSection = 
   | "overview" 
   | "proposals" 
+  | "evaluations"
   | "tickets" 
   | "sessions" 
   | "sponsorships" 
@@ -97,6 +108,7 @@ export default function Admin() {
   const navigationItems = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "proposals", label: "Proposals", icon: FileText },
+    { id: "evaluations", label: "Proposal Evaluations", icon: Star },
     { id: "tickets", label: "Ticket Options", icon: Ticket },
     { id: "sessions", label: "Sessions", icon: Calendar },
     { id: "sponsorships", label: "Sponsorship Packages", icon: Award },
@@ -148,6 +160,7 @@ export default function Admin() {
         <div className="container mx-auto p-8 max-w-7xl">
           {activeSection === "overview" && <OverviewSection statsData={statsData} />}
           {activeSection === "proposals" && <ProposalsSection />}
+          {activeSection === "evaluations" && <ProposalEvaluationsSection />}
           {activeSection === "tickets" && <TicketOptionsSection userId={userData.id} />}
           {activeSection === "sessions" && <SessionsSection />}
           {activeSection === "sponsorships" && <SponsorshipPackagesSection />}
@@ -374,6 +387,344 @@ function ProposalsSection() {
   );
 }
 
+// Proposal Evaluations Section
+function ProposalEvaluationsSection() {
+  const { toast } = useToast();
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+  const [viewEvaluationsDialog, setViewEvaluationsDialog] = useState(false);
+  const [selectedEvaluators, setSelectedEvaluators] = useState<string[]>([]);
+
+  const { data: proposals = [] } = useQuery<Proposal[]>({
+    queryKey: ["/api/proposals"]
+  });
+
+  const { data: evaluators = [] } = useQuery<ProposalEvaluator[]>({
+    queryKey: ["/api/admin/evaluators"]
+  });
+
+  const { data: teamMembers = [] } = useQuery<TeamMember[]>({
+    queryKey: ["/api/admin/team-members"]
+  });
+
+  const { data: allEvaluations = [] } = useQuery<ProposalEvaluation[]>({
+    queryKey: ["/api/evaluations"],
+    queryFn: async () => {
+      const evals = await Promise.all(
+        proposals.map(p => 
+          fetch(`/api/evaluations/proposal/${p.id}`).then(r => r.json())
+        )
+      );
+      return evals.flat();
+    },
+    enabled: proposals.length > 0
+  });
+
+  const assignEvaluatorsMutation = useMutation({
+    mutationFn: async ({ proposalId, evaluatorIds }: { proposalId: string; evaluatorIds: string[] }) => {
+      return Promise.all(
+        evaluatorIds.map(evaluatorId =>
+          apiRequest("/api/admin/assign-evaluator", "POST", {
+            proposalId,
+            evaluatorId,
+            status: "pending"
+          })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluations"] });
+      toast({ title: "Evaluators assigned successfully" });
+      setAssignDialogOpen(false);
+      setSelectedEvaluators([]);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error assigning evaluators", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const finalDecisionMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      return apiRequest(`/api/proposals/${id}/status`, "PATCH", { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/proposals"] });
+      toast({ title: "Proposal decision updated" });
+    },
+    onError: () => {
+      toast({ title: "Update failed", variant: "destructive" });
+    }
+  });
+
+  const getProposalEvaluations = (proposalId: string) => {
+    return allEvaluations.filter(e => e.proposalId === proposalId);
+  };
+
+  const getEvaluationStatus = (proposalId: string) => {
+    const evals = getProposalEvaluations(proposalId);
+    if (evals.length === 0) return { status: "no-evaluations", badge: "outline", text: "Not assigned" };
+    const completed = evals.filter(e => e.status === "completed").length;
+    const total = evals.length;
+    if (completed === total) return { status: "completed", badge: "default", text: "Completed" };
+    if (completed > 0) return { status: "in-progress", badge: "secondary", text: `${completed}/${total}` };
+    return { status: "pending", badge: "outline", text: "Pending" };
+  };
+
+  const getAverageScore = (proposalId: string) => {
+    const evals = getProposalEvaluations(proposalId).filter(e => e.overallScore);
+    if (evals.length === 0) return null;
+    const avg = evals.reduce((sum, e) => sum + (e.overallScore || 0), 0) / evals.length;
+    return Math.round(avg * 10) / 10;
+  };
+
+  const openAssignDialog = (proposal: Proposal) => {
+    setSelectedProposal(proposal);
+    setAssignDialogOpen(true);
+  };
+
+  const openViewEvaluations = (proposal: Proposal) => {
+    setSelectedProposal(proposal);
+    setViewEvaluationsDialog(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold font-serif mb-2">Proposal Evaluations</h2>
+        <p className="text-muted-foreground">Assign evaluators and review evaluation results</p>
+      </div>
+
+      <div className="space-y-4">
+        {proposals.map((proposal) => {
+          const evalStatus = getEvaluationStatus(proposal.id);
+          const avgScore = getAverageScore(proposal.id);
+          const proposalEvals = getProposalEvaluations(proposal.id);
+
+          return (
+            <Card key={proposal.id} data-testid={`evaluation-proposal-${proposal.id}`}>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{proposal.title}</CardTitle>
+                    <CardDescription className="mt-1">
+                      <Badge variant="outline" className="mr-2">{proposal.track}</Badge>
+                      <Badge variant="outline">{proposal.sessionType}</Badge>
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={evalStatus.badge as any} data-testid={`eval-status-${proposal.id}`}>
+                      {evalStatus.text}
+                    </Badge>
+                    {avgScore !== null && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-muted rounded" data-testid={`avg-score-${proposal.id}`}>
+                        <Star className="h-3 w-3 fill-primary text-primary" />
+                        <span className="text-sm font-bold">{avgScore}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openAssignDialog(proposal)}
+                    data-testid={`button-assign-evaluators-${proposal.id}`}
+                  >
+                    <UserCog className="h-4 w-4 mr-1" />
+                    Assign Evaluators
+                  </Button>
+                  {proposalEvals.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openViewEvaluations(proposal)}
+                      data-testid={`button-view-evaluations-${proposal.id}`}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Evaluations ({proposalEvals.length})
+                    </Button>
+                  )}
+                  {evalStatus.status === "completed" && proposal.status !== "accepted" && proposal.status !== "rejected" && (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => finalDecisionMutation.mutate({ id: proposal.id, status: "accepted" })}
+                        disabled={finalDecisionMutation.isPending}
+                        data-testid={`button-final-accept-${proposal.id}`}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Accept
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => finalDecisionMutation.mutate({ id: proposal.id, status: "rejected" })}
+                        disabled={finalDecisionMutation.isPending}
+                        data-testid={`button-final-reject-${proposal.id}`}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Assign Evaluators Dialog */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent data-testid="dialog-assign-evaluators">
+          <DialogHeader>
+            <DialogTitle>Assign Evaluators</DialogTitle>
+            <DialogDescription>
+              Select evaluators to review: {selectedProposal?.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {evaluators.map((evaluator) => {
+              const member = teamMembers.find(m => m.id === evaluator.teamMemberId);
+              return (
+                <div key={evaluator.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={evaluator.id}
+                    checked={selectedEvaluators.includes(evaluator.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedEvaluators([...selectedEvaluators, evaluator.id]);
+                      } else {
+                        setSelectedEvaluators(selectedEvaluators.filter(id => id !== evaluator.id));
+                      }
+                    }}
+                    data-testid={`checkbox-evaluator-${evaluator.id}`}
+                  />
+                  <Label htmlFor={evaluator.id} className="flex-1 cursor-pointer">
+                    <div className="font-medium">{member?.name || "Unknown"}</div>
+                    {evaluator.expertise && (
+                      <div className="text-sm text-muted-foreground">{evaluator.expertise}</div>
+                    )}
+                  </Label>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setAssignDialogOpen(false)}
+              data-testid="button-cancel-assign"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedProposal) {
+                  assignEvaluatorsMutation.mutate({
+                    proposalId: selectedProposal.id,
+                    evaluatorIds: selectedEvaluators
+                  });
+                }
+              }}
+              disabled={selectedEvaluators.length === 0 || assignEvaluatorsMutation.isPending}
+              data-testid="button-confirm-assign"
+            >
+              {assignEvaluatorsMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Assign ({selectedEvaluators.length})
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Evaluations Dialog */}
+      <Dialog open={viewEvaluationsDialog} onOpenChange={setViewEvaluationsDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-view-evaluations">
+          <DialogHeader>
+            <DialogTitle>Evaluation Results</DialogTitle>
+            <DialogDescription>
+              {selectedProposal?.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedProposal && getProposalEvaluations(selectedProposal.id).map((evaluation) => {
+              const evaluator = evaluators.find(e => e.id === evaluation.evaluatorId);
+              const member = teamMembers.find(m => m.id === evaluator?.teamMemberId);
+              
+              return (
+                <Card key={evaluation.id} data-testid={`evaluation-result-${evaluation.id}`}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-base">{member?.name || "Unknown Evaluator"}</CardTitle>
+                        <CardDescription>{evaluator?.expertise}</CardDescription>
+                      </div>
+                      <Badge variant={evaluation.status === "completed" ? "default" : "outline"}>
+                        {evaluation.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  {evaluation.status === "completed" && (
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-5 gap-2 text-center">
+                        <div>
+                          <Label className="text-xs">Relevance</Label>
+                          <div className="font-bold">{evaluation.relevanceScore}/5</div>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Quality</Label>
+                          <div className="font-bold">{evaluation.qualityScore}/5</div>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Innovation</Label>
+                          <div className="font-bold">{evaluation.innovationScore}/5</div>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Impact</Label>
+                          <div className="font-bold">{evaluation.impactScore}/5</div>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Feasibility</Label>
+                          <div className="font-bold">{evaluation.feasibilityScore}/5</div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Star className="h-4 w-4 fill-primary text-primary" />
+                          <span className="font-bold">Overall: {evaluation.overallScore}/5</span>
+                          <Badge variant={
+                            evaluation.recommendation === "accept" ? "default" :
+                            evaluation.recommendation === "reject" ? "destructive" :
+                            "secondary"
+                          }>
+                            {evaluation.recommendation}
+                          </Badge>
+                        </div>
+                        {evaluation.comments && (
+                          <div className="bg-muted p-3 rounded-md">
+                            <Label className="text-xs">Comments</Label>
+                            <p className="text-sm mt-1">{evaluation.comments}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // Ticket Options Section
 function TicketOptionsSection({ userId }: { userId: string }) {
   const { toast } = useToast();
@@ -524,40 +875,950 @@ function TicketOptionsSection({ userId }: { userId: string }) {
 
 // Sessions Section
 function SessionsSection() {
+  const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
+  const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
+
+  const { data: sessions = [], isLoading } = useQuery<Session[]>({
+    queryKey: ["/api/sessions"]
+  });
+
+  const { data: proposals = [] } = useQuery<Proposal[]>({
+    queryKey: ["/api/proposals"]
+  });
+
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users");
+      if (!res.ok) throw new Error("Failed to fetch users");
+      return res.json();
+    }
+  });
+
+  // Get approved proposals that don't have sessions yet
+  const approvedProposals = proposals.filter(p => 
+    p.status === "accepted" && !sessions.some(s => s.proposalId === p.id)
+  );
+
+  const getSpeakerName = (speakerId: string) => {
+    const speaker = users.find(u => u.id === speakerId);
+    return speaker?.name || "Unknown Speaker";
+  };
+
+  const createSessionSchema = z.object({
+    proposalId: z.string().min(1, "Proposal is required"),
+  });
+
+  const editSessionSchema = z.object({
+    scheduledDate: z.string().optional(),
+    scheduledTime: z.string().optional(),
+    room: z.string().optional(),
+  });
+
+  const bulkScheduleSchema = z.object({
+    scheduledDate: z.string().min(1, "Date is required"),
+    scheduledTime: z.string().min(1, "Time is required"),
+    room: z.string().min(1, "Room is required"),
+  });
+
+  const createForm = useForm<z.infer<typeof createSessionSchema>>({
+    resolver: zodResolver(createSessionSchema),
+    defaultValues: {
+      proposalId: "",
+    }
+  });
+
+  const editForm = useForm<z.infer<typeof editSessionSchema>>({
+    resolver: zodResolver(editSessionSchema),
+    defaultValues: {
+      scheduledDate: "",
+      scheduledTime: "",
+      room: "",
+    }
+  });
+
+  const bulkForm = useForm<z.infer<typeof bulkScheduleSchema>>({
+    resolver: zodResolver(bulkScheduleSchema),
+    defaultValues: {
+      scheduledDate: "",
+      scheduledTime: "",
+      room: "",
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof createSessionSchema>) => {
+      const proposal = proposals.find(p => p.id === data.proposalId);
+      if (!proposal) throw new Error("Proposal not found");
+      
+      return await apiRequest("POST", "/api/sessions", {
+        proposalId: proposal.id,
+        speakerId: proposal.userId,
+        title: proposal.title,
+        description: proposal.description,
+        track: proposal.track,
+        sessionType: proposal.sessionType,
+        duration: proposal.duration,
+        scheduledDate: null,
+        scheduledTime: null,
+        room: null
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      setIsCreateDialogOpen(false);
+      createForm.reset();
+      toast({ title: "Session created successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to create session", variant: "destructive" });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const updates: any = {};
+      if (data.scheduledDate) {
+        updates.scheduledDate = new Date(data.scheduledDate);
+      }
+      if (data.scheduledTime) {
+        updates.scheduledTime = data.scheduledTime;
+      }
+      if (data.room) {
+        updates.room = data.room;
+      }
+      return await apiRequest("PATCH", `/api/sessions/${id}`, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      setIsEditDialogOpen(false);
+      setEditingSession(null);
+      editForm.reset();
+      toast({ title: "Session updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update session", variant: "destructive" });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/sessions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      setDeleteSessionId(null);
+      toast({ title: "Session deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete session", variant: "destructive" });
+    }
+  });
+
+  const bulkUpdateMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof bulkScheduleSchema>) => {
+      const updates = Array.from(selectedSessions).map(id => ({
+        id,
+        scheduledDate: new Date(data.scheduledDate),
+        scheduledTime: data.scheduledTime,
+        room: data.room
+      }));
+      return await apiRequest("POST", "/api/sessions/bulk-update", { updates });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      setIsBulkDialogOpen(false);
+      setSelectedSessions(new Set());
+      bulkForm.reset();
+      toast({ title: "Sessions scheduled successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to schedule sessions", variant: "destructive" });
+    }
+  });
+
+  const handleEdit = (session: Session) => {
+    setEditingSession(session);
+    editForm.reset({
+      scheduledDate: session.scheduledDate ? new Date(session.scheduledDate).toISOString().split('T')[0] : "",
+      scheduledTime: session.scheduledTime || "",
+      room: session.room || "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const toggleSessionSelection = (sessionId: string) => {
+    const newSelection = new Set(selectedSessions);
+    if (newSelection.has(sessionId)) {
+      newSelection.delete(sessionId);
+    } else {
+      newSelection.add(sessionId);
+    }
+    setSelectedSessions(newSelection);
+  };
+
+  const isScheduled = (session: Session) => {
+    return !!(session.scheduledDate && session.scheduledTime && session.room);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold font-serif mb-2">Sessions Management</h2>
-        <p className="text-muted-foreground">Schedule and organize conference sessions</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold font-serif mb-2">Sessions Management</h2>
+          <p className="text-muted-foreground">Schedule and organize conference sessions</p>
+        </div>
+        <div className="flex gap-2">
+          {selectedSessions.size > 0 && (
+            <Button onClick={() => setIsBulkDialogOpen(true)} variant="outline" data-testid="button-bulk-schedule">
+              <Calendar className="h-4 w-4 mr-2" />
+              Bulk Schedule ({selectedSessions.size})
+            </Button>
+          )}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-create-session">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Session
+              </Button>
+            </DialogTrigger>
+            <DialogContent data-testid="dialog-create-session">
+              <DialogHeader>
+                <DialogTitle>Create Session from Approved Proposal</DialogTitle>
+                <DialogDescription>Select an approved proposal to create a session</DialogDescription>
+              </DialogHeader>
+              <Form {...createForm}>
+                <form onSubmit={createForm.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
+                  <FormField
+                    control={createForm.control}
+                    name="proposalId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Approved Proposal</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-proposal">
+                              <SelectValue placeholder="Select a proposal" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {approvedProposals.length === 0 ? (
+                              <SelectItem value="none" disabled>No approved proposals available</SelectItem>
+                            ) : (
+                              approvedProposals.map((proposal) => (
+                                <SelectItem key={proposal.id} value={proposal.id}>
+                                  {proposal.title} - {getSpeakerName(proposal.userId)}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={createMutation.isPending || approvedProposals.length === 0} data-testid="button-submit-create-session">
+                    {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Session"}
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center py-12 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Session scheduling interface</p>
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No sessions created yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sessions.map((session) => (
+                <div key={session.id} className="border rounded-lg p-4 space-y-3" data-testid={`session-${session.id}`}>
+                  <div className="flex items-start gap-4">
+                    <Checkbox
+                      checked={selectedSessions.has(session.id)}
+                      onCheckedChange={() => toggleSessionSelection(session.id)}
+                      data-testid={`checkbox-session-${session.id}`}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg" data-testid={`text-session-title-${session.id}`}>{session.title}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{session.description}</p>
+                          <p className="text-sm text-muted-foreground mt-2" data-testid={`text-speaker-${session.id}`}>
+                            Speaker: {getSpeakerName(session.speakerId)}
+                          </p>
+                        </div>
+                        <Badge variant={isScheduled(session) ? "default" : "secondary"} data-testid={`badge-status-${session.id}`}>
+                          {isScheduled(session) ? "Scheduled" : "Unscheduled"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 mt-3 text-sm flex-wrap">
+                        <Badge variant="outline" data-testid={`badge-track-${session.id}`}>{session.track}</Badge>
+                        <Badge variant="outline" data-testid={`badge-type-${session.id}`}>{session.sessionType}</Badge>
+                        <span className="text-muted-foreground" data-testid={`text-duration-${session.id}`}>{session.duration} minutes</span>
+                        {session.scheduledDate && (
+                          <span className="text-muted-foreground flex items-center gap-1" data-testid={`text-date-${session.id}`}>
+                            <Calendar className="h-3 w-3" />
+                            {new Date(session.scheduledDate).toLocaleDateString()}
+                          </span>
+                        )}
+                        {session.scheduledTime && (
+                          <span className="text-muted-foreground flex items-center gap-1" data-testid={`text-time-${session.id}`}>
+                            <Clock className="h-3 w-3" />
+                            {session.scheduledTime}
+                          </span>
+                        )}
+                        {session.room && (
+                          <span className="text-muted-foreground" data-testid={`text-room-${session.id}`}>Room: {session.room}</span>
+                        )}
+                      </div>
+                      <div className="flex gap-2 pt-3">
+                        <Button size="sm" variant="outline" onClick={() => handleEdit(session)} data-testid={`button-edit-${session.id}`}>
+                          <Pencil className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => setDeleteSessionId(session.id)} data-testid={`button-delete-${session.id}`}>
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Edit Session Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent data-testid="dialog-edit-session">
+          <DialogHeader>
+            <DialogTitle>Edit Session</DialogTitle>
+            <DialogDescription>Update session scheduling and room assignment</DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit((data) => editingSession && updateMutation.mutate({ id: editingSession.id, data }))} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="scheduledDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Scheduled Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} data-testid="input-edit-date" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="scheduledTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Scheduled Time</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., 09:00-10:30" {...field} data-testid="input-edit-time" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="room"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Room</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Conference Room A" {...field} data-testid="input-edit-room" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={updateMutation.isPending} data-testid="button-submit-edit-session">
+                {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Session"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Schedule Dialog */}
+      <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen}>
+        <DialogContent data-testid="dialog-bulk-schedule">
+          <DialogHeader>
+            <DialogTitle>Bulk Schedule Sessions</DialogTitle>
+            <DialogDescription>Schedule {selectedSessions.size} selected sessions</DialogDescription>
+          </DialogHeader>
+          <Form {...bulkForm}>
+            <form onSubmit={bulkForm.handleSubmit((data) => bulkUpdateMutation.mutate(data))} className="space-y-4">
+              <FormField
+                control={bulkForm.control}
+                name="scheduledDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Scheduled Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} data-testid="input-bulk-date" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={bulkForm.control}
+                name="scheduledTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Scheduled Time</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., 09:00-10:30" {...field} data-testid="input-bulk-time" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={bulkForm.control}
+                name="room"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Room</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Conference Room A" {...field} data-testid="input-bulk-room" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={bulkUpdateMutation.isPending} data-testid="button-submit-bulk-schedule">
+                {bulkUpdateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : `Schedule ${selectedSessions.size} Sessions`}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteSessionId} onOpenChange={() => setDeleteSessionId(null)}>
+        <AlertDialogContent data-testid="dialog-delete-session">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Session</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this session? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteSessionId && deleteMutation.mutate(deleteSessionId)}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
 // Sponsorship Packages Section
 function SponsorshipPackagesSection() {
+  const { userData } = useAuth();
+  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<SponsorshipPackage | null>(null);
+  const [deletePackageId, setDeletePackageId] = useState<string | null>(null);
+  const [benefitsInput, setBenefitsInput] = useState("");
+
+  const { data: packages = [], isLoading } = useQuery<SponsorshipPackage[]>({
+    queryKey: ["/api/admin/sponsorship-packages"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/sponsorship-packages", {
+        headers: getAdminHeaders(userData?.id)
+      });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    }
+  });
+
+  const packageFormSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    tier: z.string().min(1, "Tier is required"),
+    price: z.coerce.number().min(0, "Price must be positive"),
+    currency: z.string().default("EUR"),
+    description: z.string().optional(),
+    capacity: z.coerce.number().min(1, "Capacity must be at least 1").optional(),
+    available: z.boolean().default(true),
+    displayOrder: z.coerce.number().default(0),
+  });
+
+  const form = useForm<z.infer<typeof packageFormSchema>>({
+    resolver: zodResolver(packageFormSchema),
+    defaultValues: {
+      name: "",
+      tier: "",
+      price: 0,
+      currency: "EUR",
+      description: "",
+      capacity: undefined,
+      available: true,
+      displayOrder: 0,
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const benefits = benefitsInput.split("\n").filter(b => b.trim() !== "");
+      return await apiRequest("POST", "/api/admin/sponsorship-packages", 
+        { ...data, benefits }, 
+        getAdminHeaders(userData?.id)
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sponsorship-packages"] });
+      setIsDialogOpen(false);
+      form.reset();
+      setBenefitsInput("");
+      toast({ title: "Sponsorship package created" });
+    },
+    onError: () => {
+      toast({ title: "Failed to create package", variant: "destructive" });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const benefits = benefitsInput.split("\n").filter(b => b.trim() !== "");
+      return await apiRequest("PATCH", `/api/admin/sponsorship-packages/${id}`, 
+        { ...data, benefits }, 
+        getAdminHeaders(userData?.id)
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sponsorship-packages"] });
+      setIsDialogOpen(false);
+      setEditingPackage(null);
+      form.reset();
+      setBenefitsInput("");
+      toast({ title: "Sponsorship package updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update package", variant: "destructive" });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/admin/sponsorship-packages/${id}`, undefined, getAdminHeaders(userData?.id));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sponsorship-packages"] });
+      setDeletePackageId(null);
+      toast({ title: "Sponsorship package deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete package", variant: "destructive" });
+    }
+  });
+
+  const toggleAvailabilityMutation = useMutation({
+    mutationFn: async ({ id, available }: { id: string; available: boolean }) => {
+      return await apiRequest("PATCH", `/api/admin/sponsorship-packages/${id}`, 
+        { available }, 
+        getAdminHeaders(userData?.id)
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sponsorship-packages"] });
+      toast({ title: "Availability updated" });
+    }
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async ({ id, displayOrder }: { id: string; displayOrder: number }) => {
+      return await apiRequest("PATCH", `/api/admin/sponsorship-packages/${id}`, 
+        { displayOrder }, 
+        getAdminHeaders(userData?.id)
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sponsorship-packages"] });
+      toast({ title: "Order updated" });
+    }
+  });
+
+  const handleEdit = (pkg: SponsorshipPackage) => {
+    setEditingPackage(pkg);
+    form.reset({
+      name: pkg.name,
+      tier: pkg.tier,
+      price: pkg.price,
+      currency: pkg.currency,
+      description: pkg.description || "",
+      capacity: pkg.capacity || undefined,
+      available: pkg.available,
+      displayOrder: pkg.displayOrder || 0,
+    });
+    setBenefitsInput(Array.isArray(pkg.benefits) ? pkg.benefits.join("\n") : "");
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = (data: z.infer<typeof packageFormSchema>) => {
+    if (editingPackage) {
+      updateMutation.mutate({ id: editingPackage.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleMoveUp = (pkg: SponsorshipPackage, index: number) => {
+    if (index > 0) {
+      reorderMutation.mutate({ id: pkg.id, displayOrder: (pkg.displayOrder || 0) - 1 });
+    }
+  };
+
+  const handleMoveDown = (pkg: SponsorshipPackage, index: number) => {
+    if (index < packages.length - 1) {
+      reorderMutation.mutate({ id: pkg.id, displayOrder: (pkg.displayOrder || 0) + 1 });
+    }
+  };
+
+  const sortedPackages = [...packages].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold font-serif mb-2">Sponsorship Packages</h2>
-        <p className="text-muted-foreground">Manage sponsor tiers and benefits</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold font-serif mb-2">Sponsorship Packages</h2>
+          <p className="text-muted-foreground">Manage sponsor tiers and benefits</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setEditingPackage(null);
+            form.reset();
+            setBenefitsInput("");
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-add-sponsorship-package">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Package
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingPackage ? "Edit" : "Create"} Sponsorship Package</DialogTitle>
+              <DialogDescription>Configure sponsor tier, pricing, and benefits</DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Package Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Gold Sponsor" {...field} data-testid="input-package-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="tier"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tier ID</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., gold, diamond" {...field} data-testid="input-package-tier" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price (in cents)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="500000" {...field} data-testid="input-package-price" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="capacity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Capacity</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="5" {...field} data-testid="input-package-capacity" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Package description" {...field} data-testid="textarea-package-description" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-2">
+                  <Label>Benefits (one per line)</Label>
+                  <Textarea
+                    placeholder="Logo on website&#10;Premium booth space&#10;Speaking opportunity"
+                    value={benefitsInput}
+                    onChange={(e) => setBenefitsInput(e.target.value)}
+                    rows={6}
+                    data-testid="textarea-package-benefits"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="displayOrder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Display Order</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="0" {...field} data-testid="input-package-order" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="available"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Available</FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-package-available"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  data-testid="button-save-sponsorship-package"
+                >
+                  {(createMutation.isPending || updateMutation.isPending) ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    editingPackage ? "Update Package" : "Create Package"
+                  )}
+                </Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
+
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center py-12 text-muted-foreground">
-            <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Sponsorship package management</p>
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : sortedPackages.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No sponsorship packages configured</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sortedPackages.map((pkg, index) => (
+                <div 
+                  key={pkg.id} 
+                  className="border rounded-lg p-4 space-y-3" 
+                  data-testid={`sponsorship-package-${pkg.id}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-lg" data-testid={`text-package-name-${pkg.id}`}>
+                          {pkg.name}
+                        </h3>
+                        <Badge variant="outline" data-testid={`text-package-tier-${pkg.id}`}>
+                          {pkg.tier}
+                        </Badge>
+                        <Badge variant={pkg.available ? "default" : "secondary"} data-testid={`text-package-status-${pkg.id}`}>
+                          {pkg.available ? "Available" : "Unavailable"}
+                        </Badge>
+                      </div>
+                      
+                      {pkg.description && (
+                        <p className="text-sm text-muted-foreground mb-3">{pkg.description}</p>
+                      )}
+
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium" data-testid={`text-package-price-${pkg.id}`}>
+                            €{(pkg.price / 100).toLocaleString()}
+                          </span>
+                        </div>
+                        {pkg.capacity && (
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground" data-testid={`text-package-capacity-${pkg.id}`}>
+                              {pkg.sold || 0}/{pkg.capacity} sold
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {Array.isArray(pkg.benefits) && pkg.benefits.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">Benefits:</p>
+                          <ul className="text-sm text-muted-foreground space-y-1" data-testid={`list-benefits-${pkg.id}`}>
+                            {pkg.benefits.map((benefit, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                                <span>{benefit}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleEdit(pkg)}
+                          data-testid={`button-edit-package-${pkg.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          onClick={() => setDeletePackageId(pkg.id)}
+                          data-testid={`button-delete-package-${pkg.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => toggleAvailabilityMutation.mutate({ id: pkg.id, available: !pkg.available })}
+                        disabled={toggleAvailabilityMutation.isPending}
+                        data-testid={`button-toggle-availability-${pkg.id}`}
+                      >
+                        {pkg.available ? "Make Unavailable" : "Make Available"}
+                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMoveUp(pkg, index)}
+                          disabled={index === 0 || reorderMutation.isPending}
+                          data-testid={`button-move-up-${pkg.id}`}
+                        >
+                          ↑
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMoveDown(pkg, index)}
+                          disabled={index === sortedPackages.length - 1 || reorderMutation.isPending}
+                          data-testid={`button-move-down-${pkg.id}`}
+                        >
+                          ↓
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletePackageId} onOpenChange={() => setDeletePackageId(null)}>
+        <AlertDialogContent data-testid="dialog-delete-package">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Sponsorship Package</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this sponsorship package? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-package">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletePackageId && deleteMutation.mutate(deletePackageId)}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete-package"
+            >
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
