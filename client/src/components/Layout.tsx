@@ -13,20 +13,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X, User, LogOut, LayoutDashboard, Ticket, Award } from "lucide-react";
 import { useState } from "react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { currentUser, userData, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t } = useTranslation();
 
   const navigation = [
-    { name: "Home", href: "/" },
-    { name: "About", href: "/about" },
-    { name: "Tickets", href: "/tickets" },
-    { name: "Speakers (CFP)", href: "/cfp" },
-    { name: "Sponsors", href: "/sponsors" },
-    { name: "Agenda", href: "/agenda" },
-    { name: "FAQ", href: "/faq" },
+    { name: t("nav.home"), key: "home", href: "/" },
+    { name: t("nav.about"), key: "about", href: "/about" },
+    { name: t("nav.tickets"), key: "tickets", href: "/tickets" },
+    { name: t("nav.speakers"), key: "speakers", href: "/cfp" },
+    { name: t("nav.sponsors"), key: "sponsors", href: "/sponsors" },
+    { name: t("nav.agenda"), key: "agenda", href: "/agenda" },
+    { name: t("nav.faq"), key: "faq", href: "/faq" },
   ];
 
   const isActive = (href: string) => {
@@ -65,7 +67,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link key={item.href} href={item.href}>
                   <button
                     className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover-elevate active-elevate-2 h-9 px-4 py-2 ${isActive(item.href) ? "bg-muted" : ""}`}
-                    data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                    data-testid={`nav-${item.key}`}
                   >
                     {item.name}
                   </button>
@@ -166,7 +168,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <button
                       className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover-elevate active-elevate-2 h-9 px-4 py-2 w-full justify-start ${isActive(item.href) ? "bg-muted" : ""}`}
                       onClick={() => setMobileMenuOpen(false)}
-                      data-testid={`mobile-nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                      data-testid={`mobile-nav-${item.key}`}
                     >
                       {item.name}
                     </button>

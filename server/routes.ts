@@ -14,8 +14,21 @@ import {
   insertConversationSchema,
   insertMessageSchema
 } from "@shared/schema";
+import path from "path";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve manifest.json for PWA
+  app.get("/manifest.json", (req, res) => {
+    const manifestPath = path.resolve(import.meta.dirname, "..", "public", "manifest.json");
+    if (fs.existsSync(manifestPath)) {
+      res.setHeader("Content-Type", "application/manifest+json");
+      res.sendFile(manifestPath);
+    } else {
+      res.status(404).json({ error: "Manifest not found" });
+    }
+  });
+
   // User routes
   app.post("/api/users", async (req, res) => {
     try {
