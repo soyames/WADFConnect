@@ -16,9 +16,19 @@ import {
   type Certificate,
   type InsertCertificate,
   type Faq,
-  type InsertFaq
+  type InsertFaq,
+  users,
+  tickets,
+  proposals,
+  sponsorships,
+  sessions,
+  attendance,
+  ratings,
+  certificates,
+  faqs
 } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and, avg, count } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -78,303 +88,224 @@ export interface IStorage {
   createFaq(faq: InsertFaq): Promise<Faq>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private tickets: Map<string, Ticket>;
-  private proposals: Map<string, Proposal>;
-  private sponsorships: Map<string, Sponsorship>;
-  private sessions: Map<string, Session>;
-  private attendance: Map<string, Attendance>;
-  private ratings: Map<string, Rating>;
-  private certificates: Map<string, Certificate>;
-  private faqs: Map<string, Faq>;
-
-  constructor() {
-    this.users = new Map();
-    this.tickets = new Map();
-    this.proposals = new Map();
-    this.sponsorships = new Map();
-    this.sessions = new Map();
-    this.attendance = new Map();
-    this.ratings = new Map();
-    this.certificates = new Map();
-    this.faqs = new Map();
-  }
-
+export class DrizzleStorage implements IStorage {
   // Users
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0];
   }
 
   async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.firebaseUid === firebaseUid);
+    const result = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid)).limit(1);
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = {
-      ...insertUser,
-      id,
-      createdAt: new Date()
-    };
-    this.users.set(id, user);
-    return user;
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
   }
 
   async updateUserRole(id: string, role: string): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (user) {
-      user.role = role;
-      this.users.set(id, user);
-    }
-    return user;
+    const result = await db.update(users).set({ role }).where(eq(users.id, id)).returning();
+    return result[0];
   }
 
   // Tickets
   async getTicket(id: string): Promise<Ticket | undefined> {
-    return this.tickets.get(id);
+    const result = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
+    return result[0];
   }
 
   async getTicketsByUser(userId: string): Promise<Ticket[]> {
-    return Array.from(this.tickets.values()).filter(t => t.userId === userId);
+    return await db.select().from(tickets).where(eq(tickets.userId, userId));
   }
 
   async createTicket(insertTicket: InsertTicket): Promise<Ticket> {
-    const id = randomUUID();
-    const ticket: Ticket = {
-      ...insertTicket,
-      id,
-      purchasedAt: new Date()
-    };
-    this.tickets.set(id, ticket);
-    return ticket;
+    const result = await db.insert(tickets).values(insertTicket).returning();
+    return result[0];
   }
 
   async updateTicketPaymentStatus(id: string, status: string, reference?: string): Promise<Ticket | undefined> {
-    const ticket = this.tickets.get(id);
-    if (ticket) {
-      ticket.paymentStatus = status;
-      if (reference) ticket.paymentReference = reference;
-      this.tickets.set(id, ticket);
-    }
-    return ticket;
+    const updates: Partial<Ticket> = { paymentStatus: status };
+    if (reference) updates.paymentReference = reference;
+    const result = await db.update(tickets).set(updates).where(eq(tickets.id, id)).returning();
+    return result[0];
   }
 
   async getAllTickets(): Promise<Ticket[]> {
-    return Array.from(this.tickets.values());
+    return await db.select().from(tickets);
   }
 
   // Proposals
   async getProposal(id: string): Promise<Proposal | undefined> {
-    return this.proposals.get(id);
+    const result = await db.select().from(proposals).where(eq(proposals.id, id)).limit(1);
+    return result[0];
   }
 
   async getProposalsByUser(userId: string): Promise<Proposal[]> {
-    return Array.from(this.proposals.values()).filter(p => p.userId === userId);
+    return await db.select().from(proposals).where(eq(proposals.userId, userId));
   }
 
   async getAllProposals(): Promise<Proposal[]> {
-    return Array.from(this.proposals.values());
+    return await db.select().from(proposals);
   }
 
   async createProposal(insertProposal: InsertProposal): Promise<Proposal> {
-    const id = randomUUID();
-    const proposal: Proposal = {
-      ...insertProposal,
-      id,
-      submittedAt: new Date(),
-      reviewedAt: null,
-      reviewNotes: null
-    };
-    this.proposals.set(id, proposal);
-    return proposal;
+    const result = await db.insert(proposals).values(insertProposal).returning();
+    return result[0];
   }
 
   async updateProposalStatus(id: string, status: string, reviewNotes?: string): Promise<Proposal | undefined> {
-    const proposal = this.proposals.get(id);
-    if (proposal) {
-      proposal.status = status;
-      proposal.reviewedAt = new Date();
-      if (reviewNotes) proposal.reviewNotes = reviewNotes;
-      this.proposals.set(id, proposal);
-    }
-    return proposal;
+    const updates: Partial<Proposal> = { 
+      status, 
+      reviewedAt: new Date()
+    };
+    if (reviewNotes) updates.reviewNotes = reviewNotes;
+    const result = await db.update(proposals).set(updates).where(eq(proposals.id, id)).returning();
+    return result[0];
   }
 
   // Sponsorships
   async getSponsorship(id: string): Promise<Sponsorship | undefined> {
-    return this.sponsorships.get(id);
+    const result = await db.select().from(sponsorships).where(eq(sponsorships.id, id)).limit(1);
+    return result[0];
   }
 
   async getSponsorshipsByUser(userId: string): Promise<Sponsorship[]> {
-    return Array.from(this.sponsorships.values()).filter(s => s.userId === userId);
+    return await db.select().from(sponsorships).where(eq(sponsorships.userId, userId));
   }
 
   async getAllSponsorships(): Promise<Sponsorship[]> {
-    return Array.from(this.sponsorships.values());
+    return await db.select().from(sponsorships);
   }
 
   async createSponsorship(insertSponsorship: InsertSponsorship): Promise<Sponsorship> {
-    const id = randomUUID();
-    const sponsorship: Sponsorship = {
-      ...insertSponsorship,
-      id,
-      purchasedAt: new Date()
-    };
-    this.sponsorships.set(id, sponsorship);
-    return sponsorship;
+    const result = await db.insert(sponsorships).values(insertSponsorship).returning();
+    return result[0];
   }
 
   async updateSponsorshipPaymentStatus(id: string, status: string, reference?: string): Promise<Sponsorship | undefined> {
-    const sponsorship = this.sponsorships.get(id);
-    if (sponsorship) {
-      sponsorship.paymentStatus = status;
-      if (reference) sponsorship.paymentReference = reference;
-      this.sponsorships.set(id, sponsorship);
-    }
-    return sponsorship;
+    const updates: Partial<Sponsorship> = { paymentStatus: status };
+    if (reference) updates.paymentReference = reference;
+    const result = await db.update(sponsorships).set(updates).where(eq(sponsorships.id, id)).returning();
+    return result[0];
   }
 
   // Sessions
   async getSession(id: string): Promise<Session | undefined> {
-    return this.sessions.get(id);
+    const result = await db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
+    return result[0];
   }
 
   async getAllSessions(): Promise<Session[]> {
-    return Array.from(this.sessions.values());
+    return await db.select().from(sessions);
   }
 
   async getSessionsByDate(date: string): Promise<Session[]> {
-    return Array.from(this.sessions.values()).filter(s => 
-      s.scheduledDate && s.scheduledDate.toISOString().startsWith(date)
-    );
+    // Date comparison - filter sessions by scheduled date
+    const result = await db.select().from(sessions);
+    return result.filter(s => {
+      if (!s.scheduledDate) return false;
+      const sessionDate = s.scheduledDate.toISOString().split('T')[0];
+      return sessionDate === date;
+    });
   }
 
   async createSession(insertSession: InsertSession): Promise<Session> {
-    const id = randomUUID();
-    const session: Session = {
-      ...insertSession,
-      id,
-      averageRating: null,
-      totalRatings: 0
-    };
-    this.sessions.set(id, session);
-    return session;
+    const result = await db.insert(sessions).values(insertSession).returning();
+    return result[0];
   }
 
   async updateSession(id: string, updates: Partial<Session>): Promise<Session | undefined> {
-    const session = this.sessions.get(id);
-    if (session) {
-      Object.assign(session, updates);
-      this.sessions.set(id, session);
-    }
-    return session;
+    const result = await db.update(sessions).set(updates).where(eq(sessions.id, id)).returning();
+    return result[0];
   }
 
   // Attendance
   async markAttendance(insertAttendance: InsertAttendance): Promise<Attendance> {
-    const id = randomUUID();
-    const attendance: Attendance = {
-      ...insertAttendance,
-      id,
-      markedAt: new Date()
-    };
-    this.attendance.set(id, attendance);
-    return attendance;
+    const result = await db.insert(attendance).values(insertAttendance).returning();
+    return result[0];
   }
 
   async unmarkAttendance(userId: string, sessionId: string): Promise<boolean> {
-    const found = Array.from(this.attendance.values()).find(
-      a => a.userId === userId && a.sessionId === sessionId
-    );
-    if (found) {
-      this.attendance.delete(found.id);
-      return true;
-    }
-    return false;
+    const result = await db.delete(attendance)
+      .where(and(eq(attendance.userId, userId), eq(attendance.sessionId, sessionId)))
+      .returning();
+    return result.length > 0;
   }
 
   async getUserAttendance(userId: string): Promise<Attendance[]> {
-    return Array.from(this.attendance.values()).filter(a => a.userId === userId);
+    return await db.select().from(attendance).where(eq(attendance.userId, userId));
   }
 
   async getSessionAttendance(sessionId: string): Promise<Attendance[]> {
-    return Array.from(this.attendance.values()).filter(a => a.sessionId === sessionId);
+    return await db.select().from(attendance).where(eq(attendance.sessionId, sessionId));
   }
 
   // Ratings
   async createRating(insertRating: InsertRating): Promise<Rating> {
-    const id = randomUUID();
-    const rating: Rating = {
-      ...insertRating,
-      id,
-      ratedAt: new Date()
-    };
-    this.ratings.set(id, rating);
-    return rating;
+    const result = await db.insert(ratings).values(insertRating).returning();
+    return result[0];
   }
 
   async getSessionRatings(sessionId: string): Promise<Rating[]> {
-    return Array.from(this.ratings.values()).filter(r => r.sessionId === sessionId);
+    return await db.select().from(ratings).where(eq(ratings.sessionId, sessionId));
   }
 
   async getUserRating(userId: string, sessionId: string): Promise<Rating | undefined> {
-    return Array.from(this.ratings.values()).find(
-      r => r.userId === userId && r.sessionId === sessionId
-    );
+    const result = await db.select().from(ratings)
+      .where(and(eq(ratings.userId, userId), eq(ratings.sessionId, sessionId)))
+      .limit(1);
+    return result[0];
   }
 
   async updateSessionAverageRating(sessionId: string): Promise<void> {
     const sessionRatings = await this.getSessionRatings(sessionId);
-    const session = this.sessions.get(sessionId);
-    
-    if (session && sessionRatings.length > 0) {
-      const sum = sessionRatings.reduce((acc, r) => acc + r.rating, 0);
-      session.averageRating = Math.round((sum / sessionRatings.length) * 10) / 10;
-      session.totalRatings = sessionRatings.length;
-      this.sessions.set(sessionId, session);
-    }
+    if (sessionRatings.length === 0) return;
+
+    const avgRating = Math.round(
+      sessionRatings.reduce((sum, r) => sum + r.rating, 0) / sessionRatings.length
+    );
+
+    await db.update(sessions)
+      .set({ 
+        averageRating: avgRating,
+        totalRatings: sessionRatings.length 
+      })
+      .where(eq(sessions.id, sessionId));
   }
 
   // Certificates
   async getCertificate(id: string): Promise<Certificate | undefined> {
-    return this.certificates.get(id);
+    const result = await db.select().from(certificates).where(eq(certificates.id, id)).limit(1);
+    return result[0];
   }
 
   async getUserCertificate(userId: string): Promise<Certificate | undefined> {
-    return Array.from(this.certificates.values()).find(c => c.userId === userId);
+    const result = await db.select().from(certificates).where(eq(certificates.userId, userId)).limit(1);
+    return result[0];
   }
 
   async createCertificate(insertCertificate: InsertCertificate): Promise<Certificate> {
-    const id = randomUUID();
-    const certificate: Certificate = {
-      ...insertCertificate,
-      id,
-      generatedAt: new Date(),
-      pdfUrl: null
-    };
-    this.certificates.set(id, certificate);
-    return certificate;
+    const result = await db.insert(certificates).values(insertCertificate).returning();
+    return result[0];
   }
 
   // FAQs
   async getAllFaqs(): Promise<Faq[]> {
-    return Array.from(this.faqs.values()).sort((a, b) => (a.order || 0) - (b.order || 0));
+    return await db.select().from(faqs);
   }
 
   async createFaq(insertFaq: InsertFaq): Promise<Faq> {
-    const id = randomUUID();
-    const faq: Faq = {
-      ...insertFaq,
-      id
-    };
-    this.faqs.set(id, faq);
-    return faq;
+    const result = await db.insert(faqs).values(insertFaq).returning();
+    return result[0];
   }
 }
 
-export const storage = new MemStorage();
+// Export the storage instance using Drizzle
+export const storage = new DrizzleStorage();
