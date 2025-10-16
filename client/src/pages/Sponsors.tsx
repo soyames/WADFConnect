@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -18,6 +19,7 @@ const tierIcons = {
 };
 
 export default function Sponsors() {
+  const { t } = useTranslation();
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -31,8 +33,8 @@ export default function Sponsors() {
     
     if (!currentUser) {
       toast({
-        title: "Sign in required",
-        description: "Please sign in to purchase a sponsorship.",
+        title: t('sponsors.signInRequired'),
+        description: t('sponsors.signInToSponsor'),
         variant: "destructive",
       });
       setLocation("/login");
@@ -46,14 +48,14 @@ export default function Sponsors() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast({
-        title: "Sponsorship confirmed!",
-        description: "Thank you for supporting WADF. Our team will contact you shortly.",
+        title: t('sponsors.purchaseSuccess'),
+        description: t('sponsors.purchaseSuccessDescription'),
       });
       
       setLocation("/agenda");
     } catch (error: any) {
       toast({
-        title: "Purchase failed",
+        title: t('sponsors.purchaseFailed'),
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -67,13 +69,13 @@ export default function Sponsors() {
       <div className="container mx-auto max-w-7xl px-4">
         <div className="text-center mb-16">
           <Badge className="mb-4" variant="outline" data-testid="badge-sponsorships">
-            Partnership Opportunities
+            {t('sponsors.badge')}
           </Badge>
           <h1 className="font-serif text-5xl md:text-6xl font-bold mb-6">
-            Sponsor <span className="text-primary">WADF 2025</span>
+            {t('sponsors.title')}
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Amplify your brand's impact and connect with West Africa's most innovative designers and creative professionals.
+            {t('sponsors.subtitle')}
           </p>
         </div>
 
@@ -95,7 +97,7 @@ export default function Sponsors() {
                 {isPremium && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <Badge className="bg-chart-5 text-white">
-                      {tier.id === "diamond" ? "Premium" : "Popular"}
+                      {tier.id === "diamond" ? t('sponsors.premium') : t('sponsors.popular')}
                     </Badge>
                   </div>
                 )}
@@ -107,7 +109,7 @@ export default function Sponsors() {
                     </div>
                     {isSelected && (
                       <Badge variant="default" className="bg-chart-3">
-                        Selected
+                        {t('sponsors.selected')}
                       </Badge>
                     )}
                   </div>
@@ -133,7 +135,7 @@ export default function Sponsors() {
                     onClick={() => setSelectedTier(tier.id)}
                     data-testid={`button-select-${tier.id}`}
                   >
-                    {isSelected ? "Selected" : "Select Package"}
+                    {isSelected ? t('sponsors.selected') : t('sponsors.selectPackage')}
                   </Button>
                 </CardFooter>
               </Card>
@@ -144,15 +146,15 @@ export default function Sponsors() {
         {selectedTier && (
           <Card className="max-w-2xl mx-auto" data-testid="card-sponsor-checkout">
             <CardHeader>
-              <CardTitle>Complete Sponsorship Purchase</CardTitle>
+              <CardTitle>{t('sponsors.confirmPurchase')}</CardTitle>
               <CardDescription>
-                Secure your {sponsorshipTiers.find(t => t.id === selectedTier)?.name} package
+                {t('sponsors.selectTier')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePurchase} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="companyName">Company Name *</Label>
+                  <Label htmlFor="companyName">{t('sponsors.companyName')} *</Label>
                   <Input
                     id="companyName"
                     value={companyName}
@@ -164,7 +166,7 @@ export default function Sponsors() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="websiteUrl">Company Website</Label>
+                  <Label htmlFor="websiteUrl">{t('sponsors.websiteUrl')}</Label>
                   <Input
                     id="websiteUrl"
                     type="url"
@@ -177,13 +179,13 @@ export default function Sponsors() {
 
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">Selected Package:</span>
+                    <span className="font-medium">{t('sponsors.selectedPackage')}</span>
                     <span className="font-semibold">
                       {sponsorshipTiers.find(t => t.id === selectedTier)?.name}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-lg font-bold">
-                    <span>Total:</span>
+                    <span>{t('sponsors.total')}</span>
                     <span className="text-primary">
                       €{sponsorshipTiers.find(t => t.id === selectedTier)?.price.toLocaleString()}
                     </span>
@@ -200,29 +202,29 @@ export default function Sponsors() {
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
+                      {t('sponsors.processing')}
                     </>
                   ) : !currentUser ? (
-                    "Sign In to Continue"
+                    t('common.signIn')
                   ) : (
-                    "Proceed to Secure Payment"
+                    t('sponsors.confirmPurchase')
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Payments secured by Paystack • 256-bit encryption • PCI DSS compliant
+                  {t('sponsors.securityNotice')}
                 </p>
 
                 {!currentUser && (
                   <p className="text-sm text-center text-muted-foreground">
-                    Don't have an account?{" "}
+                    {t('sponsors.noAccount')}{" "}
                     <button 
                       type="button"
                       onClick={() => setLocation("/tickets")}
                       className="text-primary hover:underline font-medium"
                       data-testid="link-create-account"
                     >
-                      Create an account
+                      {t('sponsors.createAccount')}
                     </button>
                   </p>
                 )}
@@ -233,28 +235,28 @@ export default function Sponsors() {
 
         <Card className="mt-16 border-primary/20">
           <CardHeader>
-            <CardTitle className="text-2xl">Why Sponsor WADF?</CardTitle>
+            <CardTitle className="text-2xl">{t('sponsors.whySponsor')}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-3">
             <div className="space-y-2">
               <div className="text-4xl font-bold text-primary">500+</div>
-              <div className="font-medium">Qualified Attendees</div>
+              <div className="font-medium">{t('sponsors.qualifiedAttendees')}</div>
               <p className="text-sm text-muted-foreground">
-                Reach decision-makers and creative professionals
+                {t('sponsors.qualifiedAttendeesDesc')}
               </p>
             </div>
             <div className="space-y-2">
               <div className="text-4xl font-bold text-chart-2">15+</div>
-              <div className="font-medium">Countries Represented</div>
+              <div className="font-medium">{t('sponsors.countriesRepresented')}</div>
               <p className="text-sm text-muted-foreground">
-                Pan-African and international exposure
+                {t('sponsors.countriesRepresentedDesc')}
               </p>
             </div>
             <div className="space-y-2">
               <div className="text-4xl font-bold text-chart-5">3</div>
-              <div className="font-medium">Days of Engagement</div>
+              <div className="font-medium">{t('sponsors.daysOfEngagement')}</div>
               <p className="text-sm text-muted-foreground">
-                Maximum brand visibility and networking
+                {t('sponsors.daysOfEngagementDesc')}
               </p>
             </div>
           </CardContent>

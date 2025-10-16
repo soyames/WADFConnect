@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -9,49 +10,49 @@ import { useToast } from "@/hooks/use-toast";
 import { Check, Loader2, Ticket, Users, Zap } from "lucide-react";
 import { useLocation } from "wouter";
 
-const ticketTiers = [
+const getTicketTiers = (t: any) => [
   {
     id: "early-bird",
-    name: "Early Bird",
+    name: t("earlyBird"),
     price: 150,
-    description: "Limited time offer for early supporters",
+    description: t("earlyBirdDescription"),
     features: [
-      "Full conference access",
-      "All sessions and workshops",
-      "Networking events",
-      "Digital certificate",
-      "Conference materials"
+      t("featureFullAccess"),
+      t("featureAllSessions"),
+      t("featureNetworking"),
+      t("featureCertificate"),
+      t("featureMaterials")
     ],
     icon: Zap,
     highlight: true
   },
   {
     id: "regular",
-    name: "Regular Pass",
+    name: t("regularPass"),
     price: 200,
-    description: "Standard conference admission",
+    description: t("regularPassDescription"),
     features: [
-      "Full conference access",
-      "All sessions and workshops",
-      "Networking events",
-      "Digital certificate",
-      "Conference materials"
+      t("featureFullAccess"),
+      t("featureAllSessions"),
+      t("featureNetworking"),
+      t("featureCertificate"),
+      t("featureMaterials")
     ],
     icon: Ticket,
     highlight: false
   },
   {
     id: "vip",
-    name: "VIP Pass",
+    name: t("vipPass"),
     price: 350,
-    description: "Premium experience with exclusive benefits",
+    description: t("vipPassDescription"),
     features: [
-      "Everything in Regular",
-      "VIP lounge access",
-      "Priority seating",
-      "Speaker meet & greet",
-      "Exclusive dinner invitation",
-      "Premium swag bag"
+      t("featureEverythingRegular"),
+      t("featureVipLounge"),
+      t("featurePrioritySeating"),
+      t("featureSpeakerMeet"),
+      t("featureDinner"),
+      t("featureSwagBag")
     ],
     icon: Users,
     highlight: false
@@ -59,6 +60,7 @@ const ticketTiers = [
 ];
 
 export default function Tickets() {
+  const { t } = useTranslation("tickets");
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -67,6 +69,7 @@ export default function Tickets() {
   const { currentUser, signUp } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const ticketTiers = getTicketTiers(t);
 
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,11 +111,11 @@ export default function Tickets() {
       }
 
       if (!userId) {
-        throw new Error("Failed to create user");
+        throw new Error(t("errorCreatingUser"));
       }
 
-      const tier = ticketTiers.find(t => t.id === selectedTier);
-      if (!tier) throw new Error("Invalid ticket tier");
+      const tier = ticketTiers.find(tier => tier.id === selectedTier);
+      if (!tier) throw new Error(t("errorInvalidTier"));
 
       // Create ticket in DB
       const ticketRes = await fetch("/api/tickets", {
@@ -149,19 +152,19 @@ export default function Tickets() {
 
       if (paymentData.authorizationUrl) {
         toast({
-          title: "Redirecting to payment",
-          description: "You'll be redirected to complete your purchase...",
+          title: t("redirectingToPayment"),
+          description: t("redirectingDescription"),
         });
         // Redirect to Paystack payment page
         window.location.href = paymentData.authorizationUrl;
       } else {
-        throw new Error("Failed to initialize payment");
+        throw new Error(t("errorInitializePayment"));
       }
 
     } catch (error: any) {
       toast({
-        title: "Purchase failed",
-        description: error.message || "Please try again.",
+        title: t("purchaseFailed"),
+        description: error.message || t("purchaseFailedDescription"),
         variant: "destructive",
       });
     } finally {
@@ -174,13 +177,13 @@ export default function Tickets() {
       <div className="container mx-auto max-w-7xl px-4">
         <div className="text-center mb-16">
           <Badge className="mb-4" variant="outline" data-testid="badge-tickets">
-            Conference Passes
+            {t("badge")}
           </Badge>
           <h1 className="font-serif text-5xl md:text-6xl font-bold mb-6">
-            Get Your <span className="text-primary">Ticket</span>
+            {t("pageTitle")} <span className="text-primary">{t("pageTitleHighlight")}</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Secure your spot at West Africa's premier design forum. Purchase your ticket and get instantly registered.
+            {t("subtitle")}
           </p>
         </div>
 
@@ -201,7 +204,7 @@ export default function Tickets() {
                 {tier.highlight && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <Badge className="bg-primary text-primary-foreground">
-                      Best Value
+                      {t("bestValue")}
                     </Badge>
                   </div>
                 )}
@@ -213,7 +216,7 @@ export default function Tickets() {
                     </div>
                     {isSelected && (
                       <Badge variant="default" className="bg-chart-3">
-                        Selected
+                        {t("selected")}
                       </Badge>
                     )}
                   </div>
@@ -240,7 +243,7 @@ export default function Tickets() {
                     onClick={() => setSelectedTier(tier.id)}
                     data-testid={`button-select-${tier.id}`}
                   >
-                    {isSelected ? "Selected" : "Select This Ticket"}
+                    {isSelected ? t("selected") : t("selectTicket")}
                   </Button>
                 </CardFooter>
               </Card>
@@ -251,44 +254,44 @@ export default function Tickets() {
         {selectedTier && !currentUser && (
           <Card className="max-w-2xl mx-auto" data-testid="card-checkout">
             <CardHeader>
-              <CardTitle>Complete Your Registration</CardTitle>
+              <CardTitle>{t("completeRegistration")}</CardTitle>
               <CardDescription>
-                Create your account and complete payment in one step
+                {t("completeRegistrationDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePurchase} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">{t("fullName")}</Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
+                    placeholder={t("namePlaceholder")}
                     required
                     data-testid="input-name"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("email")}</Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder={t("emailPlaceholder")}
                     required
                     data-testid="input-email"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Create Password</Label>
+                  <Label htmlFor="password">{t("createPassword")}</Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder={t("passwordPlaceholder")}
                     required
                     minLength={6}
                     data-testid="input-password"
@@ -297,15 +300,15 @@ export default function Tickets() {
 
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">Selected Ticket:</span>
+                    <span className="font-medium">{t("selectedTicket")}</span>
                     <span className="font-semibold">
-                      {ticketTiers.find(t => t.id === selectedTier)?.name}
+                      {ticketTiers.find(tier => tier.id === selectedTier)?.name}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-lg font-bold">
-                    <span>Total:</span>
+                    <span>{t("total")}</span>
                     <span className="text-primary">
-                      €{ticketTiers.find(t => t.id === selectedTier)?.price}
+                      €{ticketTiers.find(tier => tier.id === selectedTier)?.price}
                     </span>
                   </div>
                 </div>
@@ -320,15 +323,15 @@ export default function Tickets() {
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
+                      {t("processing")}
                     </>
                   ) : (
-                    "Proceed to Secure Payment"
+                    t("proceedToPayment")
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Payments secured by Paystack • 256-bit encryption • PCI DSS compliant
+                  {t("securityNotice")}
                 </p>
               </form>
             </CardContent>
@@ -338,24 +341,24 @@ export default function Tickets() {
         {selectedTier && currentUser && (
           <Card className="max-w-2xl mx-auto" data-testid="card-checkout-logged-in">
             <CardHeader>
-              <CardTitle>Complete Your Purchase</CardTitle>
+              <CardTitle>{t("completePurchase")}</CardTitle>
               <CardDescription>
-                You're signed in as {currentUser.email}
+                {t("signedInAs")} {currentUser.email}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">Selected Ticket:</span>
+                    <span className="font-medium">{t("selectedTicket")}</span>
                     <span className="font-semibold">
-                      {ticketTiers.find(t => t.id === selectedTier)?.name}
+                      {ticketTiers.find(tier => tier.id === selectedTier)?.name}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-lg font-bold">
-                    <span>Total:</span>
+                    <span>{t("total")}</span>
                     <span className="text-primary">
-                      €{ticketTiers.find(t => t.id === selectedTier)?.price}
+                      €{ticketTiers.find(tier => tier.id === selectedTier)?.price}
                     </span>
                   </div>
                 </div>
@@ -370,15 +373,15 @@ export default function Tickets() {
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
+                      {t("processing")}
                     </>
                   ) : (
-                    "Proceed to Secure Payment"
+                    t("proceedToPayment")
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Payments secured by Paystack • 256-bit encryption • PCI DSS compliant
+                  {t("securityNotice")}
                 </p>
               </div>
             </CardContent>
