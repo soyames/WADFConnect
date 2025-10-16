@@ -10,7 +10,11 @@ The West African Design Forum platform is a full-stack event management system f
 - ✅ Admin dashboard with proposal management workflow
 - ✅ Session attendance tracking and rating system
 - ✅ Certificate generation with PDF download (jsPDF + html2canvas)
-- 🚧 PWA, networking, and advanced features in backlog
+- ✅ **PWA capabilities:** Offline support, installable app, service worker caching
+- ✅ **Networking features:** Connections system, messaging infrastructure (backend complete)
+- ✅ **Multi-language support:** English, French, Portuguese with i18next
+- ✅ **Calendar integration:** .ics file generation, Google Calendar & Outlook links
+- 🚧 Advanced analytics dashboard, networking UI in backlog
 
 ## User Preferences
 
@@ -49,6 +53,33 @@ The application implements a custom design system based on "Modern Africana with
   - Professional design with double border, gradient accents, and cultural aesthetics
   - Automatic download functionality with unique filename per user
   - Database record creation for certificate issuance tracking
+
+- **PWA (Progressive Web App):**
+  - Service worker with offline caching for static assets and API data
+  - Installable app with custom manifest.json
+  - Install prompt component for iOS and Android
+  - Background sync for offline attendance and rating submissions
+  - Offline page with branded design
+
+- **Networking System:**
+  - Connection requests with pending/accepted/rejected states
+  - Real-time messaging infrastructure with conversations and messages tables
+  - User directory with search and filter capabilities
+  - API endpoints for connections, conversations, and messages
+  - Unread message count tracking
+
+- **Multi-language Support:**
+  - i18next integration with English, French, and Portuguese
+  - Language switcher in header with flag indicators
+  - Persistent language preference in localStorage
+  - Comprehensive translations for all UI elements
+
+- **Calendar Integration:**
+  - .ics file generation for session downloads
+  - Google Calendar deep links for one-click add
+  - Outlook Calendar integration
+  - Timezone-aware event creation
+  - Reminder notifications (30 minutes before session)
 
 ### Backend Architecture
 
