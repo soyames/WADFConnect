@@ -24,6 +24,7 @@ import Network from "@/pages/Network";
 import Messages from "@/pages/Messages";
 import Analytics from "@/pages/Analytics";
 import Evaluator from "@/pages/Evaluator";
+import FirebaseTest from "@/pages/FirebaseTest";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/firebase-test" component={FirebaseTest} />
       <Route path="/tickets" component={Tickets} />
       <Route path="/cfp" component={CFP} />
       <Route path="/sponsors" component={Sponsors} />
