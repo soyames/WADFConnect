@@ -13,6 +13,19 @@ Key capabilities include:
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Installation & Deployment
+
+For comprehensive installation, configuration, and deployment instructions, see **[INSTALLATION.md](./INSTALLATION.md)**.
+
+This guide covers:
+- Local development setup
+- Environment configuration  
+- Database setup (Neon/PostgreSQL)
+- Deployment to Replit, Firebase, Vercel, Heroku, DigitalOcean, AWS
+- Troubleshooting and maintenance
+
+**Note:** INSTALLATION.md should be updated whenever configuration, deployment processes, or environment variables change.
+
 ## System Architecture
 
 ### Frontend
