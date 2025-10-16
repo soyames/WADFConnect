@@ -381,3 +381,215 @@ export const insertSessionMetricSchema = createInsertSchema(sessionMetrics).omit
 
 export type InsertSessionMetric = z.infer<typeof insertSessionMetricSchema>;
 export type SessionMetric = typeof sessionMetrics.$inferSelect;
+
+// Admin Settings (system-wide configuration)
+export const adminSettings = pgTable("admin_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(), // e.g., "cfp_active", "cfp_start_date", "cfp_end_date", "page_visibility_about"
+  value: text("value").notNull(), // JSON or string value
+  updatedBy: varchar("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertAdminSettingSchema = createInsertSchema(adminSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertAdminSetting = z.infer<typeof insertAdminSettingSchema>;
+export type AdminSetting = typeof adminSettings.$inferSelect;
+
+// Team Members (invited staff/organizers)
+export const teamMembers = pgTable("team_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  role: text("role").notNull(), // admin, organizer, evaluator, content-manager
+  permissions: json("permissions"), // array of permission strings
+  invitedBy: varchar("invited_by").notNull().references(() => users.id),
+  invitedAt: timestamp("invited_at").defaultNow().notNull(),
+  joinedAt: timestamp("joined_at"),
+  userId: varchar("user_id").references(() => users.id), // links to users table when they accept invite
+  status: text("status").notNull().default("pending"), // pending, active, inactive
+});
+
+export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
+  id: true,
+  invitedAt: true,
+  joinedAt: true,
+});
+
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+export type TeamMember = typeof teamMembers.$inferSelect;
+
+// Proposal Evaluators (specific to CFP)
+export const proposalEvaluators = pgTable("proposal_evaluators", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamMemberId: varchar("team_member_id").notNull().references(() => teamMembers.id),
+  expertise: text("expertise"), // area of expertise
+  assignedProposalsCount: integer("assigned_proposals_count").default(0),
+  completedEvaluations: integer("completed_evaluations").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertProposalEvaluatorSchema = createInsertSchema(proposalEvaluators).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProposalEvaluator = z.infer<typeof insertProposalEvaluatorSchema>;
+export type ProposalEvaluator = typeof proposalEvaluators.$inferSelect;
+
+// Proposal Evaluations
+export const proposalEvaluations = pgTable("proposal_evaluations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  proposalId: varchar("proposal_id").notNull().references(() => proposals.id),
+  evaluatorId: varchar("evaluator_id").notNull().references(() => proposalEvaluators.id),
+  status: text("status").notNull().default("pending"), // pending, in-progress, completed
+  // Evaluation criteria scores (1-5 scale)
+  relevanceScore: integer("relevance_score"), // how relevant to WADF themes
+  qualityScore: integer("quality_score"), // quality of proposal content
+  innovationScore: integer("innovation_score"), // innovation and uniqueness
+  impactScore: integer("impact_score"), // potential impact on audience
+  feasibilityScore: integer("feasibility_score"), // feasibility within conference format
+  overallScore: integer("overall_score"), // calculated average
+  comments: text("comments"),
+  recommendation: text("recommendation"), // accept, reject, needs-revision
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertProposalEvaluationSchema = createInsertSchema(proposalEvaluations).omit({
+  id: true,
+  assignedAt: true,
+  completedAt: true,
+});
+
+export type InsertProposalEvaluation = z.infer<typeof insertProposalEvaluationSchema>;
+export type ProposalEvaluation = typeof proposalEvaluations.$inferSelect;
+
+// Tasks (for team collaboration)
+export const tasks = pgTable("tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description"),
+  assignedTo: varchar("assigned_to").references(() => teamMembers.id),
+  assignedBy: varchar("assigned_by").notNull().references(() => users.id),
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  status: text("status").notNull().default("pending"), // pending, in-progress, completed, cancelled
+  dueDate: timestamp("due_date"),
+  category: text("category"), // content, evaluation, logistics, technical
+  relatedEntityType: text("related_entity_type"), // proposal, session, sponsorship, etc.
+  relatedEntityId: varchar("related_entity_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type Task = typeof tasks.$inferSelect;
+
+// Ticket Options (configurable by admin)
+export const ticketOptions = pgTable("ticket_options", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  type: text("type").notNull().unique(), // early-bird, regular, vip, custom
+  price: integer("price").notNull(), // in cents
+  currency: text("currency").notNull().default("EUR"),
+  description: text("description"),
+  features: json("features"), // array of feature strings
+  available: boolean("available").notNull().default(true),
+  capacity: integer("capacity"), // max tickets available
+  sold: integer("sold").default(0),
+  salesStartDate: timestamp("sales_start_date"),
+  salesEndDate: timestamp("sales_end_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTicketOptionSchema = createInsertSchema(ticketOptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  sold: true,
+});
+
+export type InsertTicketOption = z.infer<typeof insertTicketOptionSchema>;
+export type TicketOption = typeof ticketOptions.$inferSelect;
+
+// Sponsorship Packages (configurable by admin)
+export const sponsorshipPackages = pgTable("sponsorship_packages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  tier: text("tier").notNull().unique(), // supporter, gala-dinner, gold, diamond, custom
+  price: integer("price").notNull(), // in cents
+  currency: text("currency").notNull().default("EUR"),
+  description: text("description"),
+  benefits: json("benefits"), // array of benefit strings
+  available: boolean("available").notNull().default(true),
+  capacity: integer("capacity"), // max sponsors at this tier
+  sold: integer("sold").default(0),
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSponsorshipPackageSchema = createInsertSchema(sponsorshipPackages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  sold: true,
+});
+
+export type InsertSponsorshipPackage = z.infer<typeof insertSponsorshipPackageSchema>;
+export type SponsorshipPackage = typeof sponsorshipPackages.$inferSelect;
+
+// Page Visibility Settings
+export const pageSettings = pgTable("page_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pageName: text("page_name").notNull().unique(), // about, tickets, cfp, sponsors, agenda, network
+  isVisible: boolean("is_visible").notNull().default(true),
+  placeholderTitle: text("placeholder_title"),
+  placeholderMessage: text("placeholder_message"),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertPageSettingSchema = createInsertSchema(pageSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertPageSetting = z.infer<typeof insertPageSettingSchema>;
+export type PageSetting = typeof pageSettings.$inferSelect;
+
+// CFP Settings
+export const cfpSettings = pgTable("cfp_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  isActive: boolean("is_active").notNull().default(false),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  placeholderTitle: text("placeholder_title").default("Call for Proposals Opening Soon"),
+  placeholderMessage: text("placeholder_message").default("We'll be opening our Call for Proposals soon. Check back for updates!"),
+  evaluationCriteria: json("evaluation_criteria"), // array of criteria with descriptions
+  submissionGuidelines: text("submission_guidelines"),
+  allowedTracks: json("allowed_tracks"), // array of allowed track values
+  allowedSessionTypes: json("allowed_session_types"), // array of allowed session types
+  minDuration: integer("min_duration").default(15), // minutes
+  maxDuration: integer("max_duration").default(90), // minutes
+  updatedBy: varchar("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertCfpSettingSchema = createInsertSchema(cfpSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertCfpSetting = z.infer<typeof insertCfpSettingSchema>;
+export type CfpSetting = typeof cfpSettings.$inferSelect;
