@@ -16,6 +16,7 @@ import Agenda from "@/pages/Agenda";
 import FAQ from "@/pages/FAQ";
 import Admin from "@/pages/Admin";
 import PaymentCallback from "@/pages/PaymentCallback";
+import Certificate from "@/pages/Certificate";
 
 function Router() {
   return (
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/faq" component={FAQ} />
       <Route path="/admin" component={Admin} />
       <Route path="/payment/callback" component={PaymentCallback} />
+      <Route path="/certificate" component={Certificate} />
       <Route component={NotFound} />
     </Switch>
   );

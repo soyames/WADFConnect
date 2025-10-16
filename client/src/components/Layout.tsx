@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { Menu, X, User, LogOut, LayoutDashboard, Ticket } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, Ticket, Award } from "lucide-react";
 import { useState } from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -112,6 +112,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <DropdownMenuItem data-testid="menu-my-agenda">
                         <Ticket className="mr-2 h-4 w-4" />
                         My Agenda
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/certificate">
+                      <DropdownMenuItem data-testid="menu-certificate">
+                        <Award className="mr-2 h-4 w-4" />
+                        My Certificate
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuSeparator />
