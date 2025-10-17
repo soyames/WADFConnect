@@ -741,6 +741,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(settings || null);
   });
 
+  // Public Ticket Options (no auth required) - for ticket purchase page
+  app.get("/api/ticket-options", async (req, res) => {
+    const options = await storage.getAllTicketOptions();
+    // Only return available tickets
+    const availableOptions = options.filter(opt => opt.available);
+    res.json(availableOptions);
+  });
+
   // Admin routes - Ticket Options
   app.get("/api/admin/ticket-options", requireAdmin, async (req, res) => {
     const options = await storage.getAllTicketOptions();
