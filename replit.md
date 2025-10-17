@@ -59,6 +59,7 @@ This guide covers:
 
 ### Authentication & Authorization
 **Authentication:** Firebase Authentication for email/password and session management.
+**User Registration:** Users are automatically registered when they purchase tickets (no separate registration page). Ticket purchase creates both Firebase auth account and database record.
 **Authorization:** Role-Based Access Control (RBAC) with roles: attendee, speaker, sponsor, organizer, admin; frontend route protection and backend endpoint checks.
 
 ## External Dependencies

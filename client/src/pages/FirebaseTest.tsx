@@ -121,10 +121,10 @@ export default function FirebaseTest() {
               <div className="space-y-2">
                 <p className="text-green-500 font-semibold">✅ Firebase is configured correctly</p>
                 <p>To create admin account:</p>
-                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
-                  <li>Go to <a href="/register" className="text-primary underline">/register</a></li>
-                  <li>Create account with: admin@wadf.org</li>
-                  <li>Update role in database to 'admin'</li>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Create user in Firebase Console with: admin@wadf.org</li>
+                  <li>Copy the Firebase UID</li>
+                  <li>Update database: UPDATE users SET firebase_uid = 'uid', role = 'admin' WHERE email = 'admin@wadf.org'</li>
                   <li>Login at <a href="/login" className="text-primary underline">/login</a></li>
                 </ol>
               </div>

@@ -96,13 +96,14 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
-            <Link href="/register">
-              <a className="text-primary hover:underline font-medium" data-testid="link-register">
-                Create an account
-              </a>
-            </Link>
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/tickets">
+              <span className="text-primary hover:underline font-medium cursor-pointer" data-testid="link-tickets">
+                Purchase a ticket
+              </span>
+            </Link>{" "}
+            to get started.
           </div>
         </CardContent>
       </Card>
