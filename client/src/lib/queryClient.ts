@@ -1,10 +1,18 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { config } from "@/config";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
+}
+
+function getFullUrl(path: string): string {
+  if (config.apiUrl) {
+    return `${config.apiUrl}${path}`;
+  }
+  return path;
 }
 
 export async function apiRequest(
@@ -18,7 +26,7 @@ export async function apiRequest(
     ...(customHeaders || {}),
   };
 
-  const res = await fetch(url, {
+  const res = await fetch(getFullUrl(url), {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -35,7 +43,8 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const url = getFullUrl(queryKey.join("/") as string);
+    const res = await fetch(url, {
       credentials: "include",
     });
 
