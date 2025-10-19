@@ -57,16 +57,17 @@ This deployment option:
 - **Team Member Invitation System:** Admins invite members via email with role assignments (organizer, evaluator, volunteer, content-manager) and role-based access.
 
 ### Backend
-**Technology Stack:** Node.js with Express, TypeScript, Drizzle ORM, PostgreSQL (Neon serverless), and Firebase Authentication.
+**Technology Stack:** Node.js with Express, TypeScript, MongoDB driver, Google Firestore (MongoDB-compatible), and Firebase Authentication.
 
 **API Design:** RESTful API with endpoints for users, tickets, proposals, sponsorships, sessions, attendance, ratings, certificates, and FAQs.
 
 **Data Models:** Role-based users, ticket tiers, proposal workflow, sponsorship tiers, session scheduling, attendance tracking, 5-star ratings, and auto-generated certificates.
 
 ### Database
-**ORM:** Drizzle ORM for type-safe queries and TypeScript integration.
-**Schema Design:** UUID primary keys, foreign key constraints, timestamp tracking, JSON fields for metadata, and text fields for status enums.
-**Migration:** Schema defined in `/shared/schema.ts` with migrations in `/migrations`.
+**Database:** Google Firestore with MongoDB compatibility layer.
+**Driver:** Official MongoDB Node.js driver for database operations.
+**Schema Design:** ObjectId primary keys, embedded documents, timestamp tracking, flexible JSON documents.
+**Storage Implementation:** MongoDB-based storage layer in `/server/mongodb-storage.ts` implementing the IStorage interface.
 
 ### Authentication & Authorization
 **Authentication:** Firebase Authentication for email/password and session management.
@@ -76,8 +77,8 @@ This deployment option:
 ## External Dependencies
 
 ### Third-Party Services
-- **Firebase:** Authentication.
-- **Neon Database:** Serverless PostgreSQL hosting.
+- **Firebase:** Authentication and Firestore database (MongoDB-compatible).
+- **Google Cloud:** Firestore database hosting with MongoDB API.
 - **Payment Processing:** Designed with references to Paystack and Flutterwave for African payment processing.
 
 ### Key NPM Packages

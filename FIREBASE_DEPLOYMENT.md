@@ -5,8 +5,8 @@ This guide will help you deploy the WADF Platform frontend to Firebase Hosting w
 ## Architecture Overview
 
 - **Frontend**: Deployed to Firebase Hosting (Static React App)
-- **Backend**: Running on Replit (Express API + PostgreSQL)
-- **Database**: PostgreSQL on Replit (or your preferred provider)
+- **Backend**: Running on Replit (Express API)
+- **Database**: Google Firestore (MongoDB-compatible) - fully integrated with Firebase
 
 ## Prerequisites
 
@@ -17,7 +17,9 @@ This guide will help you deploy the WADF Platform frontend to Firebase Hosting w
 
 2. Firebase project already configured (✅ You have: wadf-platform)
 
-3. Replit backend deployed and accessible via HTTPS
+3. Firestore database already configured with MongoDB compatibility (✅ Connected)
+
+4. Replit backend deployed and accessible via HTTPS
 
 ## Step 1: Get Your Replit Backend URL
 
