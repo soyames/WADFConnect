@@ -15,6 +15,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Installation & Deployment
 
+### Full-Stack Deployment
 For comprehensive installation, configuration, and deployment instructions, see **[INSTALLATION.md](./INSTALLATION.md)**.
 
 This guide covers:
@@ -24,7 +25,17 @@ This guide covers:
 - Deployment to Replit, Firebase, Vercel, Heroku, DigitalOcean, AWS
 - Troubleshooting and maintenance
 
-**Note:** INSTALLATION.md should be updated whenever configuration, deployment processes, or environment variables change.
+### Firebase Frontend Deployment (Split Architecture)
+For deploying just the frontend to Firebase Hosting while keeping the backend on Replit, see **[FIREBASE_DEPLOYMENT.md](./FIREBASE_DEPLOYMENT.md)**.
+
+This deployment option:
+- Hosts static frontend on Firebase Hosting
+- Keeps backend API on Replit
+- Uses PostgreSQL on Replit
+- Configured with CORS for cross-origin requests
+- Requires setting VITE_API_URL environment variable
+
+**Note:** Both deployment guides should be updated whenever configuration, deployment processes, or environment variables change.
 
 ## System Architecture
 
