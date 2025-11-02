@@ -138,6 +138,31 @@ export interface MongoMessage {
   createdAt: Date;
 }
 
+export interface MongoPost {
+  _id: ObjectId;
+  userId: ObjectId;
+  content: string;
+  imageUrl?: string;
+  likesCount: number;
+  commentsCount: number;
+  createdAt: Date;
+}
+
+export interface MongoPostLike {
+  _id: ObjectId;
+  postId: ObjectId;
+  userId: ObjectId;
+  createdAt: Date;
+}
+
+export interface MongoPostComment {
+  _id: ObjectId;
+  postId: ObjectId;
+  userId: ObjectId;
+  content: string;
+  createdAt: Date;
+}
+
 export interface MongoRevenueSnapshot {
   _id: ObjectId;
   date: Date;

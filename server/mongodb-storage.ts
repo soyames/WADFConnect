@@ -23,6 +23,12 @@ import {
   type InsertConversation,
   type Message,
   type InsertMessage,
+  type Post,
+  type InsertPost,
+  type PostLike,
+  type InsertPostLike,
+  type PostComment,
+  type InsertPostComment,
   type RevenueSnapshot,
   type InsertRevenueSnapshot,
   type EngagementMetric,
@@ -1091,6 +1097,169 @@ export class MongoDBStorage implements IStorage {
       { returnDocument: 'after' }
     );
     return convertDoc(result);
+  }
+
+  // Posts methods
+  async getAllPosts(): Promise<Post[]> {
+    const db = await getDatabase();
+    const docs = await db.collection('posts')
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+    return convertDocs(docs);
+  }
+
+  async getPostsByUser(userId: string): Promise<Post[]> {
+    const db = await getDatabase();
+    const docs = await db.collection('posts')
+      .find({ userId: toObjectId(userId) })
+      .sort({ createdAt: -1 })
+      .toArray();
+    return convertDocs(docs);
+  }
+
+  async getPost(id: string): Promise<Post | undefined> {
+    const db = await getDatabase();
+    const doc = await db.collection('posts').findOne({ _id: toObjectId(id) });
+    return convertDoc(doc);
+  }
+
+  async createPost(insertPost: InsertPost): Promise<Post> {
+    const db = await getDatabase();
+    const doc = {
+      ...insertPost,
+      userId: toObjectId(insertPost.userId),
+      likesCount: 0,
+      commentsCount: 0,
+      createdAt: new Date(),
+    };
+    const result = await db.collection('posts').insertOne(doc);
+    return convertDoc({ _id: result.insertedId, ...doc });
+  }
+
+  async updatePost(id: string, updates: Partial<Post>): Promise<Post | undefined> {
+    const db = await getDatabase();
+    const mongoUpdates: any = { ...updates };
+    delete mongoUpdates.id;
+    
+    if (updates.userId) {
+      mongoUpdates.userId = toObjectId(updates.userId);
+    }
+    
+    const result = await db.collection('posts').findOneAndUpdate(
+      { _id: toObjectId(id) },
+      { $set: mongoUpdates },
+      { returnDocument: 'after' }
+    );
+    return convertDoc(result);
+  }
+
+  async deletePost(id: string): Promise<boolean> {
+    const db = await getDatabase();
+    const result = await db.collection('posts').deleteOne({ _id: toObjectId(id) });
+    return result.deletedCount > 0;
+  }
+
+  // Post Likes methods
+  async getPostLikes(postId: string): Promise<PostLike[]> {
+    const db = await getDatabase();
+    const docs = await db.collection('post_likes')
+      .find({ postId: toObjectId(postId) })
+      .toArray();
+    return convertDocs(docs);
+  }
+
+  async getUserLike(postId: string, userId: string): Promise<PostLike | undefined> {
+    const db = await getDatabase();
+    const doc = await db.collection('post_likes').findOne({
+      postId: toObjectId(postId),
+      userId: toObjectId(userId),
+    });
+    return convertDoc(doc);
+  }
+
+  async createPostLike(insertLike: InsertPostLike): Promise<PostLike> {
+    const db = await getDatabase();
+    const doc = {
+      ...insertLike,
+      postId: toObjectId(insertLike.postId),
+      userId: toObjectId(insertLike.userId),
+      createdAt: new Date(),
+    };
+    const result = await db.collection('post_likes').insertOne(doc);
+    
+    // Update likes count
+    await db.collection('posts').updateOne(
+      { _id: toObjectId(insertLike.postId) },
+      { $inc: { likesCount: 1 } }
+    );
+    
+    return convertDoc({ _id: result.insertedId, ...doc });
+  }
+
+  async deletePostLike(id: string): Promise<boolean> {
+    const db = await getDatabase();
+    const like = await db.collection('post_likes').findOne({ _id: toObjectId(id) });
+    if (!like) return false;
+    
+    const result = await db.collection('post_likes').deleteOne({ _id: toObjectId(id) });
+    
+    if (result.deletedCount > 0) {
+      // Update likes count
+      await db.collection('posts').updateOne(
+        { _id: like.postId },
+        { $inc: { likesCount: -1 } }
+      );
+    }
+    
+    return result.deletedCount > 0;
+  }
+
+  // Post Comments methods
+  async getPostComments(postId: string): Promise<PostComment[]> {
+    const db = await getDatabase();
+    const docs = await db.collection('post_comments')
+      .find({ postId: toObjectId(postId) })
+      .sort({ createdAt: 1 })
+      .toArray();
+    return convertDocs(docs);
+  }
+
+  async createPostComment(insertComment: InsertPostComment): Promise<PostComment> {
+    const db = await getDatabase();
+    const doc = {
+      ...insertComment,
+      postId: toObjectId(insertComment.postId),
+      userId: toObjectId(insertComment.userId),
+      createdAt: new Date(),
+    };
+    const result = await db.collection('post_comments').insertOne(doc);
+    
+    // Update comments count
+    await db.collection('posts').updateOne(
+      { _id: toObjectId(insertComment.postId) },
+      { $inc: { commentsCount: 1 } }
+    );
+    
+    return convertDoc({ _id: result.insertedId, ...doc });
+  }
+
+  async deletePostComment(id: string): Promise<boolean> {
+    const db = await getDatabase();
+    const comment = await db.collection('post_comments').findOne({ _id: toObjectId(id) });
+    if (!comment) return false;
+    
+    const result = await db.collection('post_comments').deleteOne({ _id: toObjectId(id) });
+    
+    if (result.deletedCount > 0) {
+      // Update comments count
+      await db.collection('posts').updateOne(
+        { _id: comment.postId },
+        { $inc: { commentsCount: -1 } }
+      );
+    }
+    
+    return result.deletedCount > 0;
   }
 }
 
