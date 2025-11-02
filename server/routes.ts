@@ -30,8 +30,6 @@ import path from "path";
 import fs from "fs";
 import { 
   applySecurityMiddleware, 
-  apiRateLimiter, 
-  authRateLimiter,
   requireValidReferrer 
 } from "./security";
 
@@ -92,7 +90,7 @@ Disallow: /`);
   });
 
   // Authentication routes
-  app.post("/api/auth/login", authRateLimiter, async (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
       

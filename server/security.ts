@@ -307,6 +307,7 @@ export const requireValidReferrer = (req: Request, res: Response, next: NextFunc
 
 /**
  * Apply all security middleware
+ * NOTE: Rate limiting completely disabled to handle 1,000,000 requests per second
  */
 export const applySecurityMiddleware = (app: any) => {
   // Security headers
@@ -321,18 +322,8 @@ export const applySecurityMiddleware = (app: any) => {
   // Honeypot for forms
   app.use(honeypot);
 
-  // Global rate limiter (less strict than API limiter)
-  app.use(rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute
-    max: 60, // 60 requests per minute
-    standardHeaders: true,
-    legacyHeaders: false,
-    skip: (req) => {
-      const isDev = process.env.NODE_ENV === 'development';
-      const isLocalhost = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip?.includes('localhost');
-      return !!(isDev && isLocalhost);
-    }
-  }));
+  // RATE LIMITING COMPLETELY DISABLED - Platform must handle 1M req/sec
+  // All rate limiters have been removed to support extremely high traffic capacity
 
-  console.log('🔒 Security middleware enabled: Rate limiting, bot detection, security headers');
+  console.log('🔒 Security middleware enabled: Pattern analysis, bot detection, security headers (NO rate limiting)');
 };
