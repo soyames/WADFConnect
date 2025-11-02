@@ -35,18 +35,7 @@ This deployment option:
 - Configured with CORS for cross-origin requests
 - Requires setting VITE_API_URL environment variable
 
-### Firebase Functions & Indexes
-For deploying serverless functions and database indexes, see **[FIREBASE_FUNCTIONS_DEPLOYMENT.md](./FIREBASE_FUNCTIONS_DEPLOYMENT.md)**.
-
-This includes:
-- 45+ Firestore database indexes for optimized queries
-- Comprehensive security rules for access control
-- 9 serverless cloud functions for automation
-- Daily analytics aggregation
-- Email notifications (ready for integration)
-- Certificate generation on demand
-
-**Note:** All deployment guides should be updated whenever configuration, deployment processes, or environment variables change.
+**Note:** Deployment guides should be updated whenever configuration, deployment processes, or environment variables change.
 
 ## System Architecture
 
