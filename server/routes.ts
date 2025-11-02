@@ -13,6 +13,9 @@ import {
   insertConnectionSchema,
   insertConversationSchema,
   insertMessageSchema,
+  insertPostSchema,
+  insertPostLikeSchema,
+  insertPostCommentSchema,
   insertTeamMemberSchema,
   insertCfpSettingSchema,
   insertTicketOptionSchema,
@@ -583,6 +586,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/messages/unread/:userId", async (req, res) => {
     const count = await storage.getUnreadMessageCount(req.params.userId);
     res.json({ count });
+  });
+
+  // Social Media routes - Posts
+  app.get("/api/posts", async (req, res) => {
+    const posts = await storage.getAllPosts();
+    res.json(posts);
+  });
+
+  app.get("/api/posts/user/:userId", async (req, res) => {
+    const posts = await storage.getPostsByUser(req.params.userId);
+    res.json(posts);
+  });
+
+  app.get("/api/posts/:id", async (req, res) => {
+    const post = await storage.getPost(req.params.id);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    res.json(post);
+  });
+
+  app.post("/api/posts", async (req, res) => {
+    try {
+      const validatedData = insertPostSchema.parse(req.body);
+      const post = await storage.createPost(validatedData);
+      res.json(post);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/posts/:id", async (req, res) => {
+    const userId = req.headers['x-user-id'] as string;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const post = await storage.getPost(req.params.id);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    if (post.userId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    await storage.deletePost(req.params.id);
+    res.sendStatus(200);
+  });
+
+  // Social Media routes - Post Likes
+  app.get("/api/posts/:postId/likes", async (req, res) => {
+    const likes = await storage.getPostLikes(req.params.postId);
+    res.json(likes);
+  });
+
+  app.get("/api/posts/:postId/likes/:userId", async (req, res) => {
+    const like = await storage.getUserLike(req.params.postId, req.params.userId);
+    res.json(like || null);
+  });
+
+  app.post("/api/posts/:postId/like", async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const existingLike = await storage.getUserLike(req.params.postId, userId);
+      if (existingLike) {
+        await storage.deletePostLike(existingLike.id);
+        return res.json({ liked: false });
+      }
+
+      await storage.createPostLike({
+        postId: req.params.postId,
+        userId
+      });
+      res.json({ liked: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Social Media routes - Post Comments
+  app.get("/api/posts/:postId/comments", async (req, res) => {
+    const comments = await storage.getPostComments(req.params.postId);
+    res.json(comments);
+  });
+
+  app.post("/api/posts/:postId/comments", async (req, res) => {
+    try {
+      const validatedData = insertPostCommentSchema.parse({
+        ...req.body,
+        postId: req.params.postId
+      });
+      const comment = await storage.createPostComment(validatedData);
+      res.json(comment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/comments/:id", async (req, res) => {
+    const userId = req.headers['x-user-id'] as string;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    await storage.deletePostComment(req.params.id);
+    res.sendStatus(200);
   });
 
   // Analytics routes
