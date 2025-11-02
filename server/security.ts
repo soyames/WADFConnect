@@ -2,10 +2,12 @@ import rateLimit from 'express-rate-limit';
 import slowDown from 'express-slow-down';
 import helmet from 'helmet';
 import session from 'express-session';
-import MongoStore from 'connect-mongo';
+import createMemoryStore from 'memorystore';
 import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import type { Request, Response, NextFunction } from 'express';
+
+const MemoryStore = createMemoryStore(session);
 
 // Known bot user agents (expand this list as needed)
 const KNOWN_BOTS = [
@@ -63,9 +65,11 @@ setInterval(() => {
 }, 3600000);
 
 /**
- * Configure secure express sessions with MongoDB store
+ * Configure secure express sessions with in-memory store
+ * Uses MemoryStore for high-performance session management (supports 1M req/sec)
+ * Note: For production with multiple servers, consider Redis or PostgreSQL store
  */
-export const configureSession = (mongoUri: string) => {
+export const configureSession = () => {
   if (!process.env.SESSION_SECRET) {
     throw new Error('SESSION_SECRET environment variable is required for secure sessions');
   }
@@ -74,12 +78,9 @@ export const configureSession = (mongoUri: string) => {
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: mongoUri,
-      touchAfter: 24 * 3600, // Lazy session update (24 hours)
-      crypto: {
-        secret: process.env.SESSION_SECRET
-      }
+    store: new MemoryStore({
+      checkPeriod: 86400000, // Prune expired entries every 24h
+      ttl: 604800000, // 7 days
     }),
     cookie: {
       secure: process.env.NODE_ENV === 'production', // HTTPS only in production

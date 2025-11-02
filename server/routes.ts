@@ -55,10 +55,7 @@ const requireAdmin = async (req: Request, res: Response, next: NextFunction) => 
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure secure session management
-  if (!process.env.MONGODB_URI) {
-    throw new Error("MONGODB_URI is required for session store");
-  }
-  app.use(configureSession(process.env.MONGODB_URI));
+  app.use(configureSession());
 
   // Apply comprehensive security middleware
   applySecurityMiddleware(app);
