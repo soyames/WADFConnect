@@ -1838,20 +1838,166 @@ function SponsorshipPackagesSection() {
 
 // Users Section
 function UsersSection() {
+  const { toast } = useToast();
+  const [selectedRole, setSelectedRole] = useState<string>("all");
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  const { data: users = [], isLoading } = useQuery<User[]>({
+    queryKey: ["/api/users"]
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      return await apiRequest("PATCH", `/api/users/${userId}/role`, { role });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+      toast({ title: "User role updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update user role", variant: "destructive" });
+    }
+  });
+
+  const filteredUsers = selectedRole === "all" 
+    ? users 
+    : users.filter(u => u.role === selectedRole);
+
+  const roleColors: Record<string, string> = {
+    admin: "default",
+    organizer: "default",
+    speaker: "secondary",
+    sponsor: "outline",
+    attendee: "outline"
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold font-serif mb-2">Speakers & Participants</h2>
-        <p className="text-muted-foreground">Manage user accounts and roles</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold font-serif mb-2">Speakers & Participants</h2>
+          <p className="text-muted-foreground">Manage user accounts and roles</p>
+        </div>
+        <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <SelectTrigger className="w-48" data-testid="select-filter-role">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="admin">Admins</SelectItem>
+            <SelectItem value="organizer">Organizers</SelectItem>
+            <SelectItem value="speaker">Speakers</SelectItem>
+            <SelectItem value="sponsor">Sponsors</SelectItem>
+            <SelectItem value="attendee">Attendees</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center py-12 text-muted-foreground">
-            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>User management interface</p>
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No users found</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredUsers.map((user) => (
+                <div 
+                  key={user.id} 
+                  className="flex items-center justify-between border rounded-lg p-4" 
+                  data-testid={`user-${user.id}`}
+                >
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{user.name}</h3>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <div className="mt-2">
+                      <Badge variant={roleColors[user.role] as any}>
+                        {user.role}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingUser(user);
+                      setIsEditDialogOpen(true);
+                    }}
+                    data-testid={`button-edit-user-${user.id}`}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit Role
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Role</DialogTitle>
+            <DialogDescription>Change the role for {editingUser?.name}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Current Email</Label>
+              <Input value={editingUser?.email || ""} disabled />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">New Role</Label>
+              <Select
+                value={editingUser?.role || "attendee"}
+                onValueChange={(role) => setEditingUser(editingUser ? { ...editingUser, role: role as any } : null)}
+              >
+                <SelectTrigger id="role" data-testid="select-edit-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="attendee">Attendee</SelectItem>
+                  <SelectItem value="speaker">Speaker</SelectItem>
+                  <SelectItem value="sponsor">Sponsor</SelectItem>
+                  <SelectItem value="organizer">Organizer</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditDialogOpen(false);
+                setEditingUser(null);
+              }}
+              data-testid="button-cancel-edit-user"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (editingUser) {
+                  updateRoleMutation.mutate({ userId: editingUser.id, role: editingUser.role });
+                }
+              }}
+              disabled={updateRoleMutation.isPending}
+              data-testid="button-save-user-role"
+            >
+              {updateRoleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -2690,6 +2836,11 @@ function CfpSettingsSection({ userId }: { userId: string }) {
 // Tasks Section
 function TasksSection({ userId }: { userId: string }) {
   const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ["/api/admin/tasks"],
     queryFn: async () => {
@@ -2701,6 +2852,118 @@ function TasksSection({ userId }: { userId: string }) {
     }
   });
 
+  const { data: teamMembers = [] } = useQuery<TeamMember[]>({
+    queryKey: ["/api/admin/team-members"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/team-members", {
+        headers: getAdminHeaders(userId)
+      });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    }
+  });
+
+  const taskFormSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    description: z.string().optional(),
+    priority: z.enum(["low", "medium", "high", "urgent"]),
+    status: z.enum(["pending", "in-progress", "completed", "cancelled"]),
+    assignedTo: z.string().optional(),
+    category: z.string().optional(),
+    dueDate: z.string().optional(),
+  });
+
+  const createForm = useForm<z.infer<typeof taskFormSchema>>({
+    resolver: zodResolver(taskFormSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      priority: "medium",
+      status: "pending",
+      assignedTo: "",
+      category: "",
+      dueDate: "",
+    }
+  });
+
+  const editForm = useForm<z.infer<typeof taskFormSchema>>({
+    resolver: zodResolver(taskFormSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      priority: "medium",
+      status: "pending",
+      assignedTo: "",
+      category: "",
+      dueDate: "",
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof taskFormSchema>) => {
+      return await apiRequest("POST", "/api/admin/tasks", {
+        ...data,
+        assignedBy: userId,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+      }, getAdminHeaders(userId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tasks"] });
+      setIsCreateDialogOpen(false);
+      createForm.reset();
+      toast({ title: "Task created successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to create task", variant: "destructive" });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return await apiRequest("PATCH", `/api/admin/tasks/${id}`, {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+      }, getAdminHeaders(userId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tasks"] });
+      setIsEditDialogOpen(false);
+      setEditingTask(null);
+      toast({ title: "Task updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update task", variant: "destructive" });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/admin/tasks/${id}`, undefined, getAdminHeaders(userId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tasks"] });
+      setDeleteTaskId(null);
+      toast({ title: "Task deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete task", variant: "destructive" });
+    }
+  });
+
+  const handleEdit = (task: Task) => {
+    setEditingTask(task);
+    editForm.reset({
+      title: task.title,
+      description: task.description || "",
+      priority: task.priority as any,
+      status: task.status as any,
+      assignedTo: task.assignedTo || "",
+      category: task.category || "",
+      dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -2708,10 +2971,164 @@ function TasksSection({ userId }: { userId: string }) {
           <h2 className="text-3xl font-bold font-serif mb-2">Tasks</h2>
           <p className="text-muted-foreground">Manage team tasks and assignments</p>
         </div>
-        <Button data-testid="button-add-task">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Task
-        </Button>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-add-task">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Task
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Task</DialogTitle>
+              <DialogDescription>Add a new task for your team</DialogDescription>
+            </DialogHeader>
+            <Form {...createForm}>
+              <form onSubmit={createForm.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
+                <FormField
+                  control={createForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Task title" {...field} data-testid="input-create-task-title" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Task description" {...field} data-testid="textarea-create-task-description" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={createForm.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-create-task-priority">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-create-task-status">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="in-progress">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={createForm.control}
+                  name="assignedTo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Assign To</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-create-task-assignee">
+                            <SelectValue placeholder="Select team member" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Unassigned</SelectItem>
+                          {teamMembers.map((member) => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={createForm.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Content" {...field} data-testid="input-create-task-category" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="dueDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Due Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} data-testid="input-create-task-due-date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCreateDialogOpen(false)}
+                    data-testid="button-cancel-create-task"
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createMutation.isPending} data-testid="button-submit-create-task">
+                    {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Task"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -2748,6 +3165,24 @@ function TasksSection({ userId }: { userId: string }) {
                         )}
                       </div>
                     </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(task)}
+                        data-testid={`button-edit-task-${task.id}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeleteTaskId(task.id)}
+                        data-testid={`button-delete-task-${task.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -2755,23 +3190,379 @@ function TasksSection({ userId }: { userId: string }) {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+            <DialogDescription>Update task details</DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit((data) => editingTask && updateMutation.mutate({ id: editingTask.id, data }))} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Task title" {...field} data-testid="input-edit-task-title" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Task description" {...field} data-testid="textarea-edit-task-description" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Priority</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-edit-task-priority">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-edit-task-status">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in-progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={editForm.control}
+                name="assignedTo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assign To</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-edit-task-assignee">
+                          <SelectValue placeholder="Select team member" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Unassigned</SelectItem>
+                        {teamMembers.map((member) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Content" {...field} data-testid="input-edit-task-category" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="dueDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Due Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} data-testid="input-edit-task-due-date" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                  data-testid="button-cancel-edit-task"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateMutation.isPending} data-testid="button-submit-edit-task">
+                  {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteTaskId} onOpenChange={() => setDeleteTaskId(null)}>
+        <AlertDialogContent data-testid="dialog-delete-task">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this task? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-task">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTaskId && deleteMutation.mutate(deleteTaskId)}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete-task"
+            >
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
 // Settings Section
 function SettingsSection() {
+  const { toast } = useToast();
+  const [settings, setSettings] = useState({
+    eventName: "West African Design Forum 2025",
+    eventDate: "2025-05-15",
+    eventLocation: "Accra, Ghana",
+    contactEmail: "info@wadf.org",
+    supportEmail: "support@wadf.org",
+    maxTicketsPerUser: "10",
+    enableNotifications: true,
+    enableAnalytics: true,
+    maintenanceMode: false,
+  });
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = () => {
+    setIsSaving(true);
+    // Simulate save operation
+    setTimeout(() => {
+      setIsSaving(false);
+      toast({ title: "Settings saved successfully" });
+    }, 1000);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold font-serif mb-2">Settings</h2>
-        <p className="text-muted-foreground">System configuration and preferences</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold font-serif mb-2">Settings</h2>
+          <p className="text-muted-foreground">System configuration and preferences</p>
+        </div>
+        <Button onClick={handleSave} disabled={isSaving} data-testid="button-save-settings">
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          Save Changes
+        </Button>
       </div>
+
       <Card>
-        <CardContent className="pt-6">
-          <div className="text-center py-12 text-muted-foreground">
-            <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>General settings interface</p>
+        <CardHeader>
+          <CardTitle>Event Information</CardTitle>
+          <CardDescription>Basic event details and configuration</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="event-name">Event Name</Label>
+            <Input
+              id="event-name"
+              value={settings.eventName}
+              onChange={(e) => setSettings({ ...settings, eventName: e.target.value })}
+              data-testid="input-event-name"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="event-date">Event Date</Label>
+              <Input
+                id="event-date"
+                type="date"
+                value={settings.eventDate}
+                onChange={(e) => setSettings({ ...settings, eventDate: e.target.value })}
+                data-testid="input-event-date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="event-location">Event Location</Label>
+              <Input
+                id="event-location"
+                value={settings.eventLocation}
+                onChange={(e) => setSettings({ ...settings, eventLocation: e.target.value })}
+                data-testid="input-event-location"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Contact Information</CardTitle>
+          <CardDescription>Email addresses for support and inquiries</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="contact-email">Contact Email</Label>
+              <Input
+                id="contact-email"
+                type="email"
+                value={settings.contactEmail}
+                onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
+                data-testid="input-contact-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="support-email">Support Email</Label>
+              <Input
+                id="support-email"
+                type="email"
+                value={settings.supportEmail}
+                onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                data-testid="input-support-email"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Ticket Settings</CardTitle>
+          <CardDescription>Configure ticket purchasing limits</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="max-tickets">Maximum Tickets Per User</Label>
+            <Input
+              id="max-tickets"
+              type="number"
+              min="1"
+              max="50"
+              value={settings.maxTicketsPerUser}
+              onChange={(e) => setSettings({ ...settings, maxTicketsPerUser: e.target.value })}
+              data-testid="input-max-tickets"
+            />
+            <p className="text-sm text-muted-foreground">
+              Maximum number of tickets a single user can purchase
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>System Features</CardTitle>
+          <CardDescription>Enable or disable system features</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between border rounded-lg p-4" data-testid="setting-notifications">
+            <div>
+              <h3 className="font-semibold">Email Notifications</h3>
+              <p className="text-sm text-muted-foreground">
+                Send email notifications to users for updates
+              </p>
+            </div>
+            <Switch
+              checked={settings.enableNotifications}
+              onCheckedChange={(checked) => setSettings({ ...settings, enableNotifications: checked })}
+              data-testid="switch-notifications"
+            />
+          </div>
+          <div className="flex items-center justify-between border rounded-lg p-4" data-testid="setting-analytics">
+            <div>
+              <h3 className="font-semibold">Analytics Tracking</h3>
+              <p className="text-sm text-muted-foreground">
+                Enable analytics and usage tracking
+              </p>
+            </div>
+            <Switch
+              checked={settings.enableAnalytics}
+              onCheckedChange={(checked) => setSettings({ ...settings, enableAnalytics: checked })}
+              data-testid="switch-analytics"
+            />
+          </div>
+          <div className="flex items-center justify-between border rounded-lg p-4" data-testid="setting-maintenance">
+            <div>
+              <h3 className="font-semibold">Maintenance Mode</h3>
+              <p className="text-sm text-muted-foreground">
+                Put the site in maintenance mode (only admins can access)
+              </p>
+            </div>
+            <Switch
+              checked={settings.maintenanceMode}
+              onCheckedChange={(checked) => setSettings({ ...settings, maintenanceMode: checked })}
+              data-testid="switch-maintenance"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Database Information</CardTitle>
+          <CardDescription>Current database connection status</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="default">Connected</Badge>
+              <span className="text-sm text-muted-foreground">MongoDB Atlas</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Database: wadf_production
+            </p>
           </div>
         </CardContent>
       </Card>
