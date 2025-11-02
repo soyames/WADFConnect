@@ -387,4 +387,4 @@ Happy coding! 🚀
 ---
 
 *Last Updated: October 16, 2025*
-*Project: West African Design Forum Platform v1.3.0*
+*Project: West Africa Design Forum Platform v1.3.0*

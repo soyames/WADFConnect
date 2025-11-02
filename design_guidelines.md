@@ -1,11 +1,11 @@
 # WADF Platform Design Guidelines
 
-## Design Approach: Modern Africana with Trust-Centric Elements
+## Design Approach: Modern Africa-Inspired with Trust-Centric Elements
 
 **Selected Approach:** Hybrid - Cultural Reference + Trust System
-- **Cultural Foundation:** Draw from contemporary African design leaders (Andela, Flutterwave, Paystack brands)
+- **Cultural Foundation:** Draw from contemporary Africa design leaders (Andela, Flutterwave, Paystack brands)
 - **Trust Layer:** Incorporate Stripe-like clarity for payment flows and Notion-like organization for content
-- **Guiding Principle:** Celebrate African creativity while building absolute confidence in security
+- **Guiding Principle:** Celebrate Africa creativity while building absolute confidence in security
 
 ---
 
@@ -82,7 +82,7 @@ Accent: 'Space Grotesk' - modern technical feel for stats/metrics
 - **Default:** Soft shadow, rounded-2xl corners, subtle border in brand color at 10% opacity
 - **Interactive (hover):** Lift effect with increased shadow, subtle scale transform
 - **Premium (Sponsors):** Gold border gradient, elevated shadow
-- **Speaker Cards:** Profile image with African pattern border overlay
+- **Speaker Cards:** Profile image with Africa pattern border overlay
 
 **Buttons:**
 - **Primary:** Brand primary fill, white text, rounded-lg, px-8 py-3
@@ -122,16 +122,16 @@ Accent: 'Space Grotesk' - modern technical feel for stats/metrics
 
 ## Cultural Visual Elements
 
-**African Pattern Integration:**
+**Africa Pattern Integration:**
 - Geometric Adinkra-inspired patterns as subtle background textures (5% opacity)
 - Use in certificate borders, section dividers, and card accents
 - Never overwhelming - modern interpretation, not literal reproduction
 
 **Photography & Imagery:**
-- **Hero Section:** Large, vibrant image of West African designers collaborating (workshop/creative space)
+- **Hero Section:** Large, vibrant image of West Africa designers collaborating (workshop/creative space)
 - **Speaker Profiles:** Circular frames with subtle pattern border
 - **Sponsor Logos:** On clean white/dark cards with ample breathing room
-- **Cultural Icons:** Custom icon set with African geometric influence (use Font Awesome as base, custom where needed)
+- **Cultural Icons:** Custom icon set with Africa geometric influence (use Font Awesome as base, custom where needed)
 
 **Trust & Security Visuals:**
 - Secure payment pages: Lock icons, "256-bit encryption" badges, payment provider logos (Paystack/Flutterwave)
@@ -183,4 +183,4 @@ Accent: 'Space Grotesk' - modern technical feel for stats/metrics
 
 ---
 
-**Design Philosophy Summary:** Celebrate African creative excellence through modern, professional design that builds trust, especially in financial interactions. Balance cultural authenticity with universal usability. Every pixel should inspire confidence and showcase the vibrant spirit of West African design.
+**Design Philosophy Summary:** Celebrate Africa creative excellence through modern, professional design that builds trust, especially in financial interactions. Balance cultural authenticity with universal usability. Every pixel should inspire confidence and showcase the vibrant spirit of West Africa design.

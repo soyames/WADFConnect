@@ -1,7 +1,7 @@
-# West African Design Forum (WADF) Platform
+# West Africa Design Forum (WADF) Platform
 
 ## Overview
-The West African Design Forum platform is a full-stack event management system for a premier design conference. It serves as the central digital hub for WADF 2025, enabling attendees to purchase tickets, speakers to submit proposals, sponsors to register, and organizers to manage the entire event lifecycle. The platform combines modern web technologies with a culturally-resonant design system inspired by contemporary African design leaders.
+The West Africa Design Forum platform is a full-stack event management system for a premier design conference. It serves as the central digital hub for WADF 2025, enabling attendees to purchase tickets, speakers to submit proposals, sponsors to register, and organizers to manage the entire event lifecycle. The platform combines modern web technologies with a culturally-resonant design system inspired by contemporary Africa design leaders.
 
 Key capabilities include:
 - Core MVP features with MongoDB/Firestore database and Paystack integration.
@@ -44,7 +44,7 @@ This deployment option:
 ### Frontend
 **Technology Stack:** React 18 with TypeScript, Wouter for routing, TanStack Query for state management, Radix UI with shadcn/ui for components, Tailwind CSS for styling, and Vite for building.
 
-**Design System:** "Modern Africana with Trust-Centric Elements," featuring a custom color palette (warm terracotta/amber primary, deep purple secondary), specific typography (Inter/DM Sans, Playfair Display, Space Grotesk), and dark/light mode support.
+**Design System:** "Modern Africa-Inspired with Trust-Centric Elements," featuring a custom color palette (warm terracotta/amber primary, deep purple secondary), specific typography (Inter/DM Sans, Playfair Display, Space Grotesk), and dark/light mode support.
 
 **Navigation Structure:**
 - Main navigation: Home, About, Tickets, Sponsors, Agenda, FAQ (Community Hub)
@@ -130,7 +130,7 @@ This deployment option:
 ### Third-Party Services
 - **Firebase:** Authentication and Firestore database (MongoDB-compatible).
 - **Google Cloud:** Firestore database hosting with MongoDB API.
-- **Payment Processing:** Designed with references to Paystack and Flutterwave for African payment processing.
+- **Payment Processing:** Designed with references to Paystack and Flutterwave for Africa payment processing.
 
 ### Key NPM Packages
 - **UI & Styling:** `@radix-ui/*`, `tailwindcss`, `class-variance-authority`, `lucide-react`.

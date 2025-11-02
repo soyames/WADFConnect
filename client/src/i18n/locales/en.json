@@ -14,7 +14,7 @@
     "signOut": "Sign Out"
   },
   "hero": {
-    "title": "West African Design Forum",
+    "title": "West Africa Design Forum",
     "subtitle": "Empowering Design Innovation Across West Africa",
     "date": "June 15-16, 2025 • Accra, Ghana",
     "registerNow": "Register Now",
@@ -22,7 +22,7 @@
   },
   "about": {
     "title": "About WADF",
-    "subtitle": "The West African Design Forum is a pioneering initiative dedicated to elevating the region's creative industry, fostering collaboration, and showcasing the immense talent present within West Africa.",
+    "subtitle": "The West Africa Design Forum is a pioneering initiative dedicated to elevating the region's creative industry, fostering collaboration, and showcasing the immense talent present within West Africa.",
     "mission": "Our Mission",
     "missionText": "WADF exists to empower and connect designers, promote cultural heritage, and foster innovation across West Africa. We believe in creating a persistent digital community that transforms our annual event into a year-round platform for discussion, networking, and knowledge sharing.",
     "vision": "Our Vision",
@@ -91,7 +91,7 @@
     "formTitle": "Submit Your Proposal",
     "formDescription": "Tell us about the session you'd like to present",
     "sessionTitle": "Session Title",
-    "sessionTitlePlaceholder": "e.g., The Future of African Design Systems",
+    "sessionTitlePlaceholder": "e.g., The Future of Africa Design Systems",
     "description": "Description",
     "descriptionPlaceholder": "Describe what attendees will learn from your session...",
     "track": "Track",
@@ -141,7 +141,7 @@
     "qualifiedAttendees": "Qualified Attendees",
     "qualifiedAttendeesDesc": "Reach decision-makers and creative professionals",
     "countriesRepresented": "Countries Represented",
-    "countriesRepresentedDesc": "Pan-African and international exposure",
+    "countriesRepresentedDesc": "Pan-Africa and international exposure",
     "daysOfEngagement": "Days of Engagement",
     "daysOfEngagementDesc": "Maximum brand visibility and networking"
   },
@@ -279,7 +279,7 @@
     "subtitle": "Find answers to common questions about WADF 2025",
     "general": {
       "title": "General",
-      "q1": "What is the West African Design Forum?",
+      "q1": "What is the West Africa Design Forum?",
       "a1": "WADF is the premier event celebrating and elevating West Africa's creative industry. It's a multi-day conference bringing together designers, innovators, and industry experts from across the region and beyond.",
       "q2": "When and where is WADF 2025?",
       "a2": "WADF 2025 will take place June 15-17, 2025 at the Eko Convention Centre in Lagos, Nigeria.",

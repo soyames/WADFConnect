@@ -28,7 +28,7 @@ export default function Home() {
             </Badge>
             
             <h1 className="font-serif text-5xl font-bold leading-tight tracking-tight md:text-7xl lg:text-8xl mb-6">
-              West African
+              West Africa
               <span className="block bg-gradient-to-r from-primary via-chart-2 to-chart-5 bg-clip-text text-transparent">
                 Design Forum
               </span>

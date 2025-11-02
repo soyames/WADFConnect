@@ -2039,7 +2039,7 @@ function TeamMembersSection({ userId }: { userId: string }) {
       email: "",
       name: "",
       role: "",
-      invitationMessage: "You've been invited to join the West African Design Forum team! We're excited to have you collaborate with us.",
+      invitationMessage: "You've been invited to join the West Africa Design Forum team! We're excited to have you collaborate with us.",
     },
   });
 
@@ -3372,7 +3372,7 @@ function TasksSection({ userId }: { userId: string }) {
 function SettingsSection() {
   const { toast } = useToast();
   const [settings, setSettings] = useState({
-    eventName: "West African Design Forum 2025",
+    eventName: "West Africa Design Forum 2025",
     eventDate: "2025-05-15",
     eventLocation: "Accra, Ghana",
     contactEmail: "info@wadf.org",

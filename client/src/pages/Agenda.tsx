@@ -23,8 +23,8 @@ import { downloadICS, getGoogleCalendarUrl, getOutlookCalendarUrl } from "@/util
 const mockSessions = [
   {
     id: "1",
-    title: "The Future of African Design Systems",
-    description: "Explore how design systems can empower African tech companies to build consistent, scalable products.",
+    title: "The Future of Africa Design Systems",
+    description: "Explore how design systems can empower Africa tech companies to build consistent, scalable products.",
     track: "design-thinking",
     sessionType: "talk",
     duration: 45,
@@ -51,7 +51,7 @@ const mockSessions = [
   },
   {
     id: "3",
-    title: "Hands-on: Figma for African Design Teams",
+    title: "Hands-on: Figma for Africa Design Teams",
     description: "Interactive workshop on leveraging Figma for collaborative design in distributed teams.",
     track: "technology",
     sessionType: "workshop",

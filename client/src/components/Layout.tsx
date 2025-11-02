@@ -202,7 +202,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <span className="font-serif text-xl font-bold">WADF</span>
               </div>
               <p className="text-sm text-muted-foreground max-w-md">
-                West African Design Forum - Empowering and connecting designers, 
+                West Africa Design Forum - Empowering and connecting designers, 
                 promoting cultural heritage, and fostering innovation across West Africa.
               </p>
             </div>
@@ -256,7 +256,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           
           <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>© 2025 West African Design Forum. All rights reserved.</p>
+            <p>© 2025 West Africa Design Forum. All rights reserved.</p>
           </div>
         </div>
       </footer>
