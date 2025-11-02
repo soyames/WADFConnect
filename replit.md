@@ -80,6 +80,20 @@ This deployment option:
 
 **API Design:** RESTful API with endpoints for users, tickets, proposals, sponsorships, sessions, attendance, ratings, certificates, FAQs, posts, likes, comments, connections, conversations, and messages.
 
+**Security:** Comprehensive anti-scraping and security measures:
+- **Rate Limiting:** 
+  - Global: 60 requests/minute per IP (120 in dev)
+  - API endpoints: 100 requests/15 minutes per IP
+  - Auth endpoints: 5 attempts/15 minutes per IP
+- **Bot Detection:** Blocks automated requests based on user agent analysis, with allowlist for legitimate search engines
+- **Security Headers:** Helmet.js implementation with CSP, HSTS, X-Frame-Options, and other security headers
+- **Pattern Analysis:** Detects and blocks suspicious request patterns (SQL injection, XSS, directory traversal)
+- **Request Fingerprinting:** Tracks request patterns per IP with automatic blocking for suspicious activity
+- **Honeypot Fields:** Invisible form fields to catch automated submissions
+- **Referrer Validation:** Verifies request origin for sensitive operations
+- **robots.txt:** Discourages web crawlers and AI scrapers from indexing API routes
+- **Trust Proxy:** Configured for Replit's reverse proxy environment
+
 **Data Models:** 
 - Core: Role-based users, ticket tiers, proposal workflow, sponsorship tiers, session scheduling, attendance tracking, 5-star ratings, and auto-generated certificates.
 - Social: Posts (with content, likes/comments counts), PostLikes (user-post relationships), PostComments (threaded comments), Connections (peer-to-peer networking), Conversations (1-on-1 messaging), Messages (chat history).
