@@ -16,7 +16,7 @@ import type { CfpSetting } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function CFP() {
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -62,7 +62,7 @@ export default function CFP() {
     try {
       await apiRequest("POST", "/api/proposals", {
         ...formData,
-        userId: currentUser.id,
+        userId: userData?.id,
         duration: parseInt(formData.duration)
       });
       
