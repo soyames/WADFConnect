@@ -5,6 +5,9 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
+// Enable trust proxy for Replit (behind reverse proxy)
+app.set('trust proxy', 1);
+
 const allowedOrigins = [
   'http://localhost:5000',
   'https://wadf-platform.web.app',

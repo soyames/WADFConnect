@@ -127,6 +127,24 @@ export const patternAnalysis = (req: Request, res: Response, next: NextFunction)
   const fullUrl = req.originalUrl || req.url;
   const referer = req.headers.referer || '';
 
+  // Skip pattern analysis for static assets and Vite HMR in development
+  if (process.env.NODE_ENV === 'development') {
+    const skipPaths = [
+      '/node_modules/',
+      '/@vite/',
+      '/@react-refresh',
+      '/@fs/',
+      '/src/',
+      '/public/',
+      '/__vite_ping',
+      '.js', '.css', '.map', '.ico', '.png', '.jpg', '.svg', '.woff', '.woff2', '.ttf'
+    ];
+    
+    if (skipPaths.some(path => fullUrl.includes(path))) {
+      return next();
+    }
+  }
+
   // Initialize or update tracking for this IP
   let tracking = requestTracking.get(ip);
   const now = Date.now();
@@ -147,7 +165,9 @@ export const patternAnalysis = (req: Request, res: Response, next: NextFunction)
   }
 
   // Block if too many requests in short time (potential scraping)
-  if (tracking.count > 60) { // More than 60 requests per minute
+  // More lenient in development (120 req/min), strict in production (60 req/min)
+  const maxRequests = process.env.NODE_ENV === 'development' ? 120 : 60;
+  if (tracking.count > maxRequests) {
     tracking.blockedUntil = now + 3600000; // Block for 1 hour
     console.warn(`IP ${ip} blocked for excessive requests: ${tracking.count} requests/minute`);
     return res.status(429).json({ 
