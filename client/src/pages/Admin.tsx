@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -755,13 +755,41 @@ function TicketOptionsSection({ userId }: { userId: string }) {
     }
   });
 
+  // Form schema for ticket options
+  const ticketFormSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    type: z.string().min(1, "Type is required"),
+    price: z.number().min(0, "Price must be 0 or greater"),
+    currency: z.string().default("EUR"),
+    description: z.string().optional(),
+    features: z.string().optional(), // JSON string of features array
+    capacity: z.number().min(1, "Capacity must be at least 1").optional(),
+    available: z.boolean().default(true),
+  });
+
+  const form = useForm<z.infer<typeof ticketFormSchema>>({
+    resolver: zodResolver(ticketFormSchema),
+    defaultValues: {
+      name: "",
+      type: "",
+      price: 0,
+      currency: "EUR",
+      description: "",
+      features: "",
+      capacity: 100,
+      available: true,
+    }
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       return await apiRequest("POST", "/api/admin/ticket-options", data, getAdminHeaders(userId));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ticket-options"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ticket-options"] });
       setIsDialogOpen(false);
+      form.reset();
       toast({ title: "Ticket option created" });
     }
   });
@@ -772,8 +800,10 @@ function TicketOptionsSection({ userId }: { userId: string }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ticket-options"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ticket-options"] });
       setIsDialogOpen(false);
       setEditingOption(null);
+      form.reset();
       toast({ title: "Ticket option updated" });
     }
   });
@@ -784,9 +814,70 @@ function TicketOptionsSection({ userId }: { userId: string }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ticket-options"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ticket-options"] });
       toast({ title: "Ticket option deleted" });
     }
   });
+
+  // Handle opening edit dialog
+  const handleEdit = (option: TicketOption) => {
+    setEditingOption(option);
+    
+    // Parse features if it's a JSON string
+    let featuresStr = "";
+    if (option.features) {
+      try {
+        const featuresArray = typeof option.features === 'string' 
+          ? JSON.parse(option.features) 
+          : option.features;
+        featuresStr = Array.isArray(featuresArray) ? featuresArray.join('\n') : "";
+      } catch (e) {
+        featuresStr = "";
+      }
+    }
+
+    form.reset({
+      name: option.name,
+      type: option.type,
+      price: option.price,
+      currency: option.currency || "EUR",
+      description: option.description || "",
+      features: featuresStr,
+      capacity: option.capacity || undefined,
+      available: option.available,
+    });
+    setIsDialogOpen(true);
+  };
+
+  // Handle form submission
+  const onSubmit = (values: z.infer<typeof ticketFormSchema>) => {
+    // Convert features from string to JSON array
+    let featuresJson = null;
+    if (values.features) {
+      const featuresArray = values.features.split('\n').map(f => f.trim()).filter(f => f.length > 0);
+      featuresJson = JSON.stringify(featuresArray);
+    }
+
+    const data = {
+      ...values,
+      features: featuresJson,
+    };
+
+    if (editingOption) {
+      updateMutation.mutate({ id: editingOption.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  // Handle dialog close
+  const handleDialogChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setEditingOption(null);
+      form.reset();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -795,41 +886,168 @@ function TicketOptionsSection({ userId }: { userId: string }) {
           <h2 className="text-3xl font-bold font-serif mb-2">Ticket Options</h2>
           <p className="text-muted-foreground">Manage ticket types and pricing</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
             <Button data-testid="button-add-ticket-option">
               <Plus className="h-4 w-4 mr-2" />
               Add Ticket Option
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingOption ? "Edit" : "Create"} Ticket Option</DialogTitle>
               <DialogDescription>Configure ticket pricing and availability</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Ticket Type</Label>
-                <Input placeholder="e.g., Early Bird, VIP" data-testid="input-ticket-type" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Price (in cents)</Label>
-                  <Input type="number" placeholder="5000" data-testid="input-ticket-price" />
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ticket Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Early Bird Pass" {...field} data-testid="input-ticket-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ticket Type (Unique ID)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., early-bird" {...field} data-testid="input-ticket-type" />
+                      </FormControl>
+                      <FormDescription>Unique identifier for this ticket type</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price (in cents)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="5000" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            data-testid="input-ticket-price" 
+                          />
+                        </FormControl>
+                        <FormDescription>€{((field.value || 0) / 100).toFixed(2)}</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="capacity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Capacity</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="100" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                            value={field.value || ""}
+                            data-testid="input-ticket-capacity" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                <div>
-                  <Label>Capacity</Label>
-                  <Input type="number" placeholder="100" data-testid="input-ticket-capacity" />
-                </div>
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea placeholder="Ticket description" data-testid="textarea-ticket-description" />
-              </div>
-              <Button className="w-full" data-testid="button-save-ticket-option">
-                Save Ticket Option
-              </Button>
-            </div>
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Describe this ticket option" 
+                          {...field} 
+                          data-testid="textarea-ticket-description" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="features"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Features (one per line)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Access to all sessions&#10;Coffee and lunch included&#10;Certificate of attendance" 
+                          {...field}
+                          rows={5}
+                          data-testid="textarea-ticket-features" 
+                        />
+                      </FormControl>
+                      <FormDescription>Enter each feature on a new line</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="available"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <input 
+                          type="checkbox" 
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="h-4 w-4"
+                          data-testid="checkbox-ticket-available"
+                        />
+                      </FormControl>
+                      <FormLabel className="!mt-0">Available for purchase</FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  data-testid="button-save-ticket-option"
+                >
+                  {createMutation.isPending || updateMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Ticket Option'
+                  )}
+                </Button>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
@@ -868,10 +1086,19 @@ function TicketOptionsSection({ userId }: { userId: string }) {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => setEditingOption(option)} data-testid={`button-edit-ticket-${option.id}`}>
+                      <Button size="sm" variant="outline" onClick={() => handleEdit(option)} data-testid={`button-edit-ticket-${option.id}`}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(option.id)} data-testid={`button-delete-ticket-${option.id}`}>
+                      <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete "${option.name}"?`)) {
+                            deleteMutation.mutate(option.id);
+                          }
+                        }} 
+                        data-testid={`button-delete-ticket-${option.id}`}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
