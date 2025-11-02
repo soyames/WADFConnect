@@ -54,6 +54,10 @@ const requireAdmin = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize seed data (ticket options, etc.) on first run
+  const { initializeSeedData } = await import("./seed-data");
+  await initializeSeedData();
+
   // Configure secure session management
   app.use(configureSession());
 
