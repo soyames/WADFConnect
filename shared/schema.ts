@@ -48,11 +48,24 @@ export type Ticket = typeof tickets.$inferSelect;
 export const proposals = pgTable("proposals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Speaker Information
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  location: text("location").notNull(), // Where speaker is currently based
+  linkedinUrl: text("linkedin_url"),
+  companyName: text("company_name"),
+  position: text("position"), // Current role/position
+  
+  // Session Information
   title: text("title").notNull(),
-  description: text("description").notNull(),
+  abstract: text("abstract").notNull(), // Short summary/abstract
+  description: text("description").notNull(), // Full description
   track: text("track").notNull(), // design-thinking, innovation, technology, culture
   sessionType: text("session_type").notNull(), // talk, workshop, panel
   duration: integer("duration").notNull(), // in minutes
+  
+  // Review & Status
   status: text("status").notNull().default("submitted"), // submitted, under-review, accepted, rejected
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
   reviewedAt: timestamp("reviewed_at"),
