@@ -20,7 +20,6 @@ import Admin from "@/pages/Admin";
 import PaymentCallback from "@/pages/PaymentCallback";
 import Certificate from "@/pages/Certificate";
 import Network from "@/pages/Network";
-import Messages from "@/pages/Messages";
 import Analytics from "@/pages/Analytics";
 import Evaluator from "@/pages/Evaluator";
 import FirebaseTest from "@/pages/FirebaseTest";
@@ -43,7 +42,6 @@ function Router() {
       <Route path="/payment/callback" component={PaymentCallback} />
       <Route path="/certificate" component={Certificate} />
       <Route path="/network" component={Network} />
-      <Route path="/messages" component={Messages} />
       <Route component={NotFound} />
     </Switch>
   );
