@@ -30,7 +30,12 @@ import path from "path";
 import fs from "fs";
 import { 
   applySecurityMiddleware, 
-  requireValidReferrer 
+  requireValidReferrer,
+  configureSession,
+  validateEmail,
+  trackFailedLogin,
+  authStrictLimiter,
+  sanitizeString
 } from "./security";
 
 // Admin authorization middleware
@@ -49,6 +54,12 @@ const requireAdmin = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure secure session management
+  if (!process.env.MONGODB_URI) {
+    throw new Error("MONGODB_URI is required for session store");
+  }
+  app.use(configureSession(process.env.MONGODB_URI));
+
   // Apply comprehensive security middleware
   applySecurityMiddleware(app);
 
@@ -89,20 +100,31 @@ Disallow: /`);
     }
   });
 
-  // Authentication routes
-  app.post("/api/auth/login", async (req, res) => {
+  // Authentication routes with strict rate limiting
+  app.post("/api/auth/login", authStrictLimiter, async (req, res) => {
     try {
       const { email, password } = req.body;
+      const ip = req.ip || 'unknown';
       
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
       }
 
+      // Validate email format and check for phishing patterns
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.valid) {
+        return res.status(400).json({ error: emailValidation.error });
+      }
+
+      // Sanitize inputs
+      const sanitizedEmail = sanitizeString(email, 254);
+
       // Get user by email
       const users = await storage.getAllUsers();
-      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const user = users.find(u => u.email.toLowerCase() === sanitizedEmail.toLowerCase());
       
       if (!user) {
+        trackFailedLogin(ip);
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
@@ -113,6 +135,7 @@ Disallow: /`);
         : false;
 
       if (!isValidPassword) {
+        trackFailedLogin(ip);
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
