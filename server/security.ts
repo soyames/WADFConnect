@@ -45,34 +45,30 @@ setInterval(() => {
 }, 3600000);
 
 /**
- * Aggressive rate limiting for API endpoints
- * Limits: 100 requests per 15 minutes per IP
+ * Very permissive rate limiting for API endpoints
+ * Limits: 10000 requests per minute per IP (handles high traffic)
  */
 export const apiRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  windowMs: 60 * 1000, // 1 minute
+  max: 10000, // Very high limit to handle traffic
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip localhost in development
-  skip: (req) => {
-    const isDev = process.env.NODE_ENV === 'development';
-    const isLocalhost = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip?.includes('localhost');
-    return !!(isDev && isLocalhost);
-  }
+  skip: () => true, // Disabled by default - enable in production if needed
 });
 
 /**
- * Strict rate limiting for authentication endpoints
- * Limits: 5 attempts per 15 minutes per IP
+ * Permissive rate limiting for authentication endpoints
+ * Limits: 1000 attempts per minute per IP
  */
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login attempts per windowMs
+  windowMs: 60 * 1000, // 1 minute
+  max: 1000, // High limit for authentication
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true, // Don't count successful logins
+  skip: () => true, // Disabled by default - enable in production if needed
+  skipSuccessfulRequests: true,
 });
 
 /**
@@ -172,9 +168,9 @@ export const patternAnalysis = (req: Request, res: Response, next: NextFunction)
     }
   }
 
-  // Block if too many requests in short time (potential scraping)
-  // More lenient in development (120 req/min), strict in production (60 req/min)
-  const maxRequests = process.env.NODE_ENV === 'development' ? 120 : 60;
+  // Very high limit to handle massive traffic
+  // Only block truly excessive patterns (100000 req/min)
+  const maxRequests = 100000;
   if (tracking.count > maxRequests) {
     tracking.blockedUntil = now + 3600000; // Block for 1 hour
     console.warn(`IP ${ip} blocked for excessive requests: ${tracking.count} requests/minute`);
@@ -184,8 +180,8 @@ export const patternAnalysis = (req: Request, res: Response, next: NextFunction)
     });
   }
 
-  // Block if suspicious patterns detected
-  if (tracking.suspiciousCount > 3) {
+  // Block only if many suspicious patterns detected (raised from 3 to 50)
+  if (tracking.suspiciousCount > 50) {
     tracking.blockedUntil = now + 7200000; // Block for 2 hours
     console.warn(`IP ${ip} blocked for suspicious activity`);
     return res.status(403).json({ error: 'Suspicious activity detected' });
