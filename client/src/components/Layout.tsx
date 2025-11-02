@@ -25,15 +25,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { name: t("nav.home"), key: "home", href: "/" },
     { name: t("nav.about"), key: "about", href: "/about" },
     { name: t("nav.tickets"), key: "tickets", href: "/tickets" },
-    { name: t("nav.speakers"), key: "speakers", href: "/cfp" },
     { name: t("nav.sponsors"), key: "sponsors", href: "/sponsors" },
     { name: t("nav.agenda"), key: "agenda", href: "/agenda" },
-    { name: t("nav.network"), key: "network", href: "/network" },
     { name: t("nav.faq"), key: "faq", href: "/faq" },
   ];
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
+    // Special handling for FAQ tab - also active when on /cfp or /network
+    if (href === "/faq" && (location.startsWith("/faq") || location.startsWith("/cfp") || location.startsWith("/network"))) {
+      return true;
+    }
     return location.startsWith(href);
   };
 
@@ -68,6 +70,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link key={item.href} href={item.href}>
                   <button
                     className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover-elevate active-elevate-2 h-9 px-4 py-2 ${isActive(item.href) ? "bg-muted" : ""}`}
+                    aria-current={isActive(item.href) ? "page" : undefined}
                     data-testid={`nav-${item.key}`}
                   >
                     {item.name}
@@ -168,6 +171,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <Link key={item.href} href={item.href}>
                     <button
                       className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover-elevate active-elevate-2 h-9 px-4 py-2 w-full justify-start ${isActive(item.href) ? "bg-muted" : ""}`}
+                      aria-current={isActive(item.href) ? "page" : undefined}
                       onClick={() => setMobileMenuOpen(false)}
                       data-testid={`mobile-nav-${item.key}`}
                     >

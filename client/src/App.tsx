@@ -19,7 +19,6 @@ import FAQ from "@/pages/FAQ";
 import Admin from "@/pages/Admin";
 import PaymentCallback from "@/pages/PaymentCallback";
 import Certificate from "@/pages/Certificate";
-import Network from "@/pages/Network";
 import Analytics from "@/pages/Analytics";
 import Evaluator from "@/pages/Evaluator";
 import FirebaseTest from "@/pages/FirebaseTest";
@@ -32,7 +31,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/firebase-test" component={FirebaseTest} />
       <Route path="/tickets" component={Tickets} />
-      <Route path="/cfp" component={CFP} />
+      <Route path="/cfp" component={FAQ} />
       <Route path="/sponsors" component={Sponsors} />
       <Route path="/agenda" component={Agenda} />
       <Route path="/faq" component={FAQ} />
@@ -41,7 +40,7 @@ function Router() {
       <Route path="/evaluator" component={Evaluator} />
       <Route path="/payment/callback" component={PaymentCallback} />
       <Route path="/certificate" component={Certificate} />
-      <Route path="/network" component={Network} />
+      <Route path="/network" component={FAQ} />
       <Route component={NotFound} />
     </Switch>
   );

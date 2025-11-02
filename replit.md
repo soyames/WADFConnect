@@ -45,6 +45,13 @@ This deployment option:
 
 **Design System:** "Modern Africana with Trust-Centric Elements," featuring a custom color palette (warm terracotta/amber primary, deep purple secondary), specific typography (Inter/DM Sans, Playfair Display, Space Grotesk), and dark/light mode support.
 
+**Navigation Structure:**
+- Main navigation: Home, About, Tickets, Sponsors, Agenda, FAQ (Community Hub)
+- **Community Hub (FAQ page):** Tabbed interface containing:
+  - FAQ tab: Frequently asked questions
+  - Speakers (CFP) tab: Call for Proposals submission system
+  - Network tab: Twitter/X-like social networking platform
+
 **Key Features:**
 - **Certificate Generation:** Client-side PDF generation using jsPDF and html2canvas, personalized with WADF branding.
 - **PWA:** Service worker for offline caching, installable app, and background sync for submissions.
