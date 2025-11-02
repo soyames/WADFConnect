@@ -4,10 +4,11 @@
 The West African Design Forum platform is a full-stack event management system for a premier design conference. It serves as the central digital hub for WADF 2025, enabling attendees to purchase tickets, speakers to submit proposals, sponsors to register, and organizers to manage the entire event lifecycle. The platform combines modern web technologies with a culturally-resonant design system inspired by contemporary African design leaders.
 
 Key capabilities include:
-- Core MVP features with PostgreSQL database and Paystack integration.
+- Core MVP features with MongoDB/Firestore database and Paystack integration.
 - Comprehensive Admin Dashboard with 11 sections for event management.
 - Multi-evaluator proposal evaluation system.
-- PWA capabilities, networking features, and multi-language support (English, French, Portuguese).
+- PWA capabilities and multi-language support (English, French, Portuguese).
+- **Twitter/X-like Social Networking Platform** with integrated messaging, posts, likes, comments, and connection management.
 - Calendar integration, advanced analytics dashboard, and a team member system with role-based access.
 
 ## User Preferences
@@ -47,7 +48,18 @@ This deployment option:
 **Key Features:**
 - **Certificate Generation:** Client-side PDF generation using jsPDF and html2canvas, personalized with WADF branding.
 - **PWA:** Service worker for offline caching, installable app, and background sync for submissions.
-- **Networking System:** Connection requests, real-time messaging, and a user directory.
+- **Twitter/X-like Social Networking:** Comprehensive social platform featuring:
+  - Public feed with real-time posts from all users
+  - Like system with toggle functionality and counts
+  - Comment threads on posts with user attribution
+  - Post creation with rich text content
+  - Delete own posts functionality
+  - Connection management (send/accept/reject requests)
+  - Integrated messaging system within the Network page (no standalone Messages page)
+  - 3-tab interface: Feed, Connections, Messages
+  - Real-time conversation threads with message history
+  - User directory with connection status indicators
+  - Network statistics sidebar showing connection counts
 - **Multi-language Support:** i18next integration for English, French, Portuguese with a language switcher.
 - **Calendar Integration:** UI for session schedules, .ics file generation, Google Calendar and Outlook links.
 - **Advanced Analytics Dashboard:** Comprehensive analytics page with Recharts visualizations for revenue, engagement, session performance, and sponsor ROI.
@@ -59,9 +71,11 @@ This deployment option:
 ### Backend
 **Technology Stack:** Node.js with Express, TypeScript, MongoDB driver, Google Firestore (MongoDB-compatible), and Firebase Authentication.
 
-**API Design:** RESTful API with endpoints for users, tickets, proposals, sponsorships, sessions, attendance, ratings, certificates, and FAQs.
+**API Design:** RESTful API with endpoints for users, tickets, proposals, sponsorships, sessions, attendance, ratings, certificates, FAQs, posts, likes, comments, connections, conversations, and messages.
 
-**Data Models:** Role-based users, ticket tiers, proposal workflow, sponsorship tiers, session scheduling, attendance tracking, 5-star ratings, and auto-generated certificates.
+**Data Models:** 
+- Core: Role-based users, ticket tiers, proposal workflow, sponsorship tiers, session scheduling, attendance tracking, 5-star ratings, and auto-generated certificates.
+- Social: Posts (with content, likes/comments counts), PostLikes (user-post relationships), PostComments (threaded comments), Connections (peer-to-peer networking), Conversations (1-on-1 messaging), Messages (chat history).
 
 ### Database
 **Database:** Google Firestore with MongoDB compatibility layer.
