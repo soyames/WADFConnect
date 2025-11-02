@@ -11,8 +11,9 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
+  password: text("password"), // Hashed password for session auth
   role: text("role").notNull().default("attendee"), // attendee, speaker, sponsor, organizer, admin
-  firebaseUid: text("firebase_uid").unique(),
+  firebaseUid: text("firebase_uid").unique(), // Keep for backward compatibility
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

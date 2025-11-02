@@ -91,6 +91,80 @@ Disallow: /`);
     }
   });
 
+  // Authentication routes
+  app.post("/api/auth/login", authRateLimiter, async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      // Get user by email
+      const users = await storage.getAllUsers();
+      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      
+      if (!user) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Check password
+      const bcrypt = await import("bcryptjs");
+      const isValidPassword = user.password 
+        ? await bcrypt.compare(password, user.password)
+        : false;
+
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Create session
+      if (req.session) {
+        req.session.userId = user.id;
+        req.session.userEmail = user.email;
+        req.session.userRole = user.role;
+      }
+
+      // Return user data (without password)
+      const { password: _, ...userData } = user;
+      res.json({
+        success: true,
+        user: userData
+      });
+    } catch (error: any) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({ error: "Logout failed" });
+        }
+        res.json({ success: true });
+      });
+    } else {
+      res.json({ success: true });
+    }
+  });
+
+  app.get("/api/auth/session", async (req, res) => {
+    if (req.session?.userId) {
+      try {
+        const user = await storage.getUser(req.session.userId);
+        if (user) {
+          const { password: _, ...userData } = user;
+          return res.json({ user: userData });
+        }
+      } catch (error) {
+        console.error("Session error:", error);
+      }
+    }
+    res.json({ user: null });
+  });
+
   // User routes with API rate limiting
   app.post("/api/users", async (req, res) => {
     try {
