@@ -28,6 +28,12 @@ import {
 import type { Request, Response, NextFunction } from "express";
 import path from "path";
 import fs from "fs";
+import { 
+  applySecurityMiddleware, 
+  apiRateLimiter, 
+  authRateLimiter,
+  requireValidReferrer 
+} from "./security";
 
 // Admin authorization middleware
 const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
@@ -45,6 +51,35 @@ const requireAdmin = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Apply comprehensive security middleware
+  applySecurityMiddleware(app);
+
+  // Serve robots.txt to discourage scrapers
+  app.get("/robots.txt", (req, res) => {
+    res.type("text/plain");
+    res.send(`User-agent: *
+Disallow: /api/
+Disallow: /admin
+Disallow: /login
+Disallow: /payment/
+Crawl-delay: 10
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /`);
+  });
+
   // Serve manifest.json for PWA
   app.get("/manifest.json", (req, res) => {
     const manifestPath = path.resolve(import.meta.dirname, "..", "public", "manifest.json");
@@ -56,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User routes
+  // User routes with API rate limiting
   app.post("/api/users", async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
