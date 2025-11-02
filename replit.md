@@ -105,9 +105,15 @@ This deployment option:
 **Storage Implementation:** MongoDB-based storage layer in `/server/mongodb-storage.ts` implementing the IStorage interface.
 
 ### Authentication & Authorization
-**Authentication:** Firebase Authentication for email/password and session management.
-**User Registration:** Users are automatically registered when they purchase tickets (no separate registration page). Ticket purchase creates both Firebase auth account and database record.
+**Authentication:** Session-based authentication using bcrypt for password hashing and Express sessions for session management. Firebase references removed from authentication flow.
+**Admin Credentials:** 
+- Email: admin@wadf.org
+- Password: WADF@2025!
+**User Registration:** Users are automatically registered when they purchase tickets (no separate registration page).
 **Authorization:** Role-Based Access Control (RBAC) with roles: attendee, speaker, sponsor, organizer, admin; frontend route protection and backend endpoint checks.
+**Login Endpoint:** POST /api/auth/login for email/password authentication
+**Session Endpoint:** GET /api/auth/session to retrieve current authenticated user
+**Logout Endpoint:** POST /api/auth/logout to destroy session
 
 ## External Dependencies
 

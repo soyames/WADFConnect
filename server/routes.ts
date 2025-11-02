@@ -96,31 +96,23 @@ Disallow: /`);
     try {
       const { email, password } = req.body;
       
-      console.log("Login attempt for:", email);
-      
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
       }
 
       // Get user by email
       const users = await storage.getAllUsers();
-      console.log("Total users found:", users.length);
       const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
       
       if (!user) {
-        console.log("User not found for email:", email);
         return res.status(401).json({ error: "Invalid email or password" });
       }
-
-      console.log("User found:", user.email, "has password:", !!user.password);
 
       // Check password
       const bcrypt = await import("bcryptjs");
       const isValidPassword = user.password 
         ? await bcrypt.compare(password, user.password)
         : false;
-
-      console.log("Password valid:", isValidPassword);
 
       if (!isValidPassword) {
         return res.status(401).json({ error: "Invalid email or password" });
