@@ -83,6 +83,14 @@ export const botDetection = (req: Request, res: Response, next: NextFunction) =>
   const userAgent = (req.headers['user-agent'] || '').toLowerCase();
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
 
+  // Skip bot detection in development for testing purposes
+  const isDev = process.env.NODE_ENV === 'development';
+  const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip?.includes('localhost');
+  
+  if (isDev && isLocalhost) {
+    return next();
+  }
+
   // Check if IP is currently blocked
   const tracking = requestTracking.get(ip);
   if (tracking?.blockedUntil && tracking.blockedUntil > Date.now()) {
