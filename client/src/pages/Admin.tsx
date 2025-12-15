@@ -3599,8 +3599,8 @@ function TasksSection({ userId }: { userId: string }) {
 function SettingsSection() {
   const { toast } = useToast();
   const [settings, setSettings] = useState({
-    eventName: "West Africa Design Forum 2025",
-    eventDate: "2025-05-15",
+    eventName: "West Africa Design Forum 2026",
+    eventDate: "2026-05-15",
     eventLocation: "Accra, Ghana",
     contactEmail: "info@wadf.org",
     supportEmail: "support@wadf.org",

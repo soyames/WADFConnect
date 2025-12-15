@@ -33,8 +33,8 @@ export async function seedTicketOptions() {
         ]),
         available: true,
         capacity: 100,
-        salesStartDate: new Date("2025-01-01"),
-        salesEndDate: new Date("2025-12-31")
+        salesStartDate: new Date("2026-01-01"),
+        salesEndDate: new Date("2026-12-31")
       },
       {
         name: "One-Day Pass",
@@ -51,8 +51,8 @@ export async function seedTicketOptions() {
         ]),
         available: true,
         capacity: 300,
-        salesStartDate: new Date("2025-01-01"),
-        salesEndDate: new Date("2025-06-30")
+        salesStartDate: new Date("2026-01-01"),
+        salesEndDate: new Date("2026-06-30")
       },
       {
         name: "Two-Day Pass",
@@ -70,15 +70,15 @@ export async function seedTicketOptions() {
         ]),
         available: true,
         capacity: 200,
-        salesStartDate: new Date("2025-01-01"),
-        salesEndDate: new Date("2025-06-30")
+        salesStartDate: new Date("2026-01-01"),
+        salesEndDate: new Date("2026-06-30")
       },
       {
         name: "Full Conference Pass",
         type: "full-conference",
         price: 45000, // €450.00 (price in cents)
         currency: "EUR",
-        description: "Complete access to all three days of WADF 2025 with exclusive perks",
+        description: "Complete access to all three days of WADF 2026 with exclusive perks",
         features: JSON.stringify([
           "Access to all 3 days and sessions",
           "All meals and refreshments",
@@ -92,8 +92,8 @@ export async function seedTicketOptions() {
         ]),
         available: true,
         capacity: 500,
-        salesStartDate: new Date("2025-01-01"),
-        salesEndDate: new Date("2025-06-30")
+        salesStartDate: new Date("2026-01-01"),
+        salesEndDate: new Date("2026-06-30")
       },
       {
         name: "Early Bird - Full Conference",
@@ -111,8 +111,8 @@ export async function seedTicketOptions() {
         ]),
         available: true,
         capacity: 150,
-        salesStartDate: new Date("2025-01-01"),
-        salesEndDate: new Date("2025-03-31") // Early bird ends March 31
+        salesStartDate: new Date("2026-01-01"),
+        salesEndDate: new Date("2026-03-31") // Early bird ends March 31
       }
     ];
 

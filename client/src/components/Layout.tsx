@@ -250,13 +250,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     hello@wadf.org
                   </a>
                 </li>
-                <li>June 15-17, 2025</li>
+                <li>June 15-17, 2026</li>
               </ul>
             </div>
           </div>
           
           <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>© 2025 West Africa Design Forum. All rights reserved.</p>
+            <p>© 2026 West Africa Design Forum. All rights reserved.</p>
           </div>
         </div>
       </footer>

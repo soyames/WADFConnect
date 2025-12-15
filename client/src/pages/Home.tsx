@@ -22,9 +22,9 @@ export default function Home() {
         
         <div className="container relative mx-auto max-w-7xl px-4">
           <div className="mx-auto max-w-4xl text-center">
-            <Badge className="mb-6 gap-2" variant="outline" data-testid="badge-2025">
+            <Badge className="mb-6 gap-2" variant="outline" data-testid="badge-2026">
               <Sparkles className="h-3 w-3" />
-              <span className="font-serif">West Africa's Premier Design Event 2025</span>
+              <span className="font-serif">West Africa's Premier Design Event 2026</span>
             </Badge>
             
             <h1 className="font-serif text-5xl font-bold leading-tight tracking-tight md:text-7xl lg:text-8xl mb-6">

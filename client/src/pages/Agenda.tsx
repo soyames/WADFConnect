@@ -28,7 +28,7 @@ const mockSessions = [
     track: "design-thinking",
     sessionType: "talk",
     duration: 45,
-    scheduledDate: "2025-06-15",
+    scheduledDate: "2026-06-15",
     scheduledTime: "09:00-09:45",
     room: "Main Hall",
     speaker: { name: "Amara Okonkwo", role: "Lead Designer, Andela" },
@@ -42,7 +42,7 @@ const mockSessions = [
     track: "innovation",
     sessionType: "panel",
     duration: 60,
-    scheduledDate: "2025-06-15",
+    scheduledDate: "2026-06-15",
     scheduledTime: "10:00-11:00",
     room: "Conference Room A",
     speaker: { name: "Dr. Ben Adekunle", role: "Professor, University of Lagos" },
@@ -56,7 +56,7 @@ const mockSessions = [
     track: "technology",
     sessionType: "workshop",
     duration: 90,
-    scheduledDate: "2025-06-15",
+    scheduledDate: "2026-06-15",
     scheduledTime: "14:00-15:30",
     room: "Workshop Space",
     speaker: { name: "Chidinma Nwosu", role: "Product Designer, Flutterwave" },
@@ -76,7 +76,7 @@ export default function Agenda() {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const [selectedTrack, setSelectedTrack] = useState<string>("all");
-  const [selectedDay, setSelectedDay] = useState<string>("2025-06-15");
+  const [selectedDay, setSelectedDay] = useState<string>("2026-06-15");
   const [attendedSessions, setAttendedSessions] = useState<Set<string>>(new Set());
 
   // TODO: Replace with actual API call
@@ -138,9 +138,9 @@ export default function Agenda() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="2025-06-15">Day 1 - June 15</SelectItem>
-                <SelectItem value="2025-06-16">Day 2 - June 16</SelectItem>
-                <SelectItem value="2025-06-17">Day 3 - June 17</SelectItem>
+                <SelectItem value="2026-06-15">Day 1 - June 15</SelectItem>
+                <SelectItem value="2026-06-16">Day 2 - June 16</SelectItem>
+                <SelectItem value="2026-06-17">Day 3 - June 17</SelectItem>
               </SelectContent>
             </Select>
           </div>

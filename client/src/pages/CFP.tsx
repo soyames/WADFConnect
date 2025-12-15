@@ -479,7 +479,7 @@ export default function CFP() {
                 <div className="text-center space-y-4">
                   <h3 className="text-xl font-semibold">Ready to Submit Your Proposal?</h3>
                   <p className="text-muted-foreground">
-                    Review the criteria above and submit your session proposal for WADF 2025
+                    Review the criteria above and submit your session proposal for WADF 2026
                   </p>
                   <Button 
                     size="lg" 
@@ -522,7 +522,7 @@ export default function CFP() {
             Submit Your Proposal
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Fill in the form below to submit your session proposal for WADF 2025
+            Fill in the form below to submit your session proposal for WADF 2026
           </p>
         </div>
 

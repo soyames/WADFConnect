@@ -26,7 +26,7 @@ export default function InstallPrompt() {
           <Download className="h-5 w-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm mb-1">Install WADF 2025</h3>
+          <h3 className="font-semibold text-sm mb-1">Install WADF 2026</h3>
           <p className="text-xs text-muted-foreground mb-3">
             Install our app for quick access, offline support, and a better experience!
           </p>

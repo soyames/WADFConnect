@@ -100,7 +100,7 @@ export default function Certificate() {
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       
       // Save PDF
-      const fileName = `WADF_2025_Certificate_${userData.name.replace(/\s+/g, "_")}.pdf`;
+      const fileName = `WADF_2026_Certificate_${userData.name.replace(/\s+/g, "_")}.pdf`;
       pdf.save(fileName);
 
       // Save certificate record to database
@@ -160,7 +160,7 @@ export default function Certificate() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">Your Certificate</h1>
           <p className="text-muted-foreground mb-6">
-            Congratulations on attending {attendedSessions.length} session{attendedSessions.length !== 1 ? 's' : ''} at WADF 2025!
+            Congratulations on attending {attendedSessions.length} session{attendedSessions.length !== 1 ? 's' : ''} at WADF 2026!
           </p>
           <Button
             onClick={generatePDF}
@@ -192,7 +192,7 @@ export default function Certificate() {
             {/* Header */}
             <div className="mb-8">
               <div className="text-6xl font-serif text-primary mb-2" style={{ fontFamily: "Playfair Display, serif" }}>
-                WADF 2025
+                WADF 2026
               </div>
               <div className="text-xl text-muted-foreground tracking-widest">
                 WEST AFRICAN DESIGN FORUM
@@ -237,7 +237,7 @@ export default function Certificate() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Accra, Ghana • June 15-16, 2025
+                Accra, Ghana • June 15-16, 2026
               </p>
             </div>
           </div>
