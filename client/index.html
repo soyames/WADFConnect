@@ -23,5 +23,15 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Handle GitHub Pages SPA redirect
+      (function() {
+        var redirect = sessionStorage.getItem('redirect');
+        if (redirect && redirect !== location.href) {
+          sessionStorage.removeItem('redirect');
+          history.replaceState(null, '', redirect.replace(location.origin, ''));
+        }
+      })();
+    </script>
   </body>
 </html>

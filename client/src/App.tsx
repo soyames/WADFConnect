@@ -21,7 +21,7 @@ import PaymentCallback from "@/pages/PaymentCallback";
 import Certificate from "@/pages/Certificate";
 import Analytics from "@/pages/Analytics";
 import Evaluator from "@/pages/Evaluator";
-import FirebaseTest from "@/pages/FirebaseTest";
+
 
 function Router() {
   return (
@@ -29,7 +29,6 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
       <Route path="/login" component={Login} />
-      <Route path="/firebase-test" component={FirebaseTest} />
       <Route path="/tickets" component={Tickets} />
       <Route path="/cfp" component={FAQ} />
       <Route path="/sponsors" component={Sponsors} />

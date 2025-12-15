@@ -1,15 +1,49 @@
+# Node modules
 node_modules
+npm-debug.log
+
+# Build outputs
 dist
-.git
-.gitignore
-.env
-.env.local
 .vite
 .cache
-*.log
-README.md
+
+# Git
+.git
+.gitignore
+.github
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# Test files
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Documentation (not needed in container)
+GITHUB-PAGES-SETUP.md
+FIREBASE-DEPLOYMENT.md
+DOWNLOAD-INSTRUCTIONS.md
+INSTALLATION.md
+
+# Firebase (removed)
+firebase.json
+.firebaserc
+
+# Development only
 .replit
 replit.nix
 .config

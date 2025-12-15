@@ -1,23 +1,24 @@
-# Dockerfile for Cloud Run deployment
+# Multi-stage Dockerfile for WADF Platform
+# Stage 1: Builder - Build static frontend for GitHub Pages
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install ALL dependencies (including devDependencies needed for build)
 RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build static client for GitHub Pages
+ENV NODE_ENV=production
+RUN npm run build:client
 
-# Production stage
-FROM node:20-alpine
+# Production stage for full-stack deployment (Cloud Run, Railway, etc.)
+FROM node:20-alpine AS production
 
 WORKDIR /app
 
@@ -26,7 +27,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 
-# Expose port (Cloud Run will set PORT env var)
+# Expose port
 ENV PORT=8080
 EXPOSE 8080
 

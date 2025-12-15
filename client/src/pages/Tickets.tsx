@@ -75,19 +75,19 @@ export default function Tickets() {
             throw new Error("Failed to create user account");
           }
         } else {
-          // For paid tickets, use Firebase auth
-          await signUp(email, password, name);
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // For paid tickets, create user account
+          const createRes = await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, name, password, role: "attendee" }),
+            credentials: "include",
+          });
           
-          const auth = (await import("@/lib/firebase")).auth;
-          const user = auth.currentUser;
-          
-          if (user) {
-            const userRes = await fetch(`/api/users/firebase/${user.uid}`);
-            if (userRes.ok) {
-              const userData = await userRes.json();
-              userId = userData.id;
-            }
+          if (createRes.ok) {
+            const userData = await createRes.json();
+            userId = userData.id;
+          } else {
+            throw new Error("Failed to create user account");
           }
         }
       }

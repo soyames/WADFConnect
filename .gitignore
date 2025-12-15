@@ -37,3 +37,6 @@ Thumbs.db
 .env.keys
 .env.local
 .env.*.local
+
+*.md
+!README.md
