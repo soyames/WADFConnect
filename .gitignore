@@ -4,3 +4,36 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.env
+.env.*
+env.example
+*.key
+*.pem
+*.secret
+secrets.json
+.secrets/
+
+# IDE & Editor
+.vscode/
+.idea/
+.claude/
+claude/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS Files
+Thumbs.db
+.DS_Store
+*.swp
+.env.keys
+.env.local
+.env.*.local
