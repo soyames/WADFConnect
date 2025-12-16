@@ -61,7 +61,8 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
+// Initialize the app
+const initializeApp = async () => {
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -84,6 +85,7 @@ app.use((req, res, next) => {
   // Export for Vercel serverless
   if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
     // Don't start server in serverless environment
+    return app;
   } else {
     // ALWAYS serve the app on the port specified in the environment variable PORT
     // Other ports are firewalled. Default to 5000 if not specified.
@@ -97,11 +99,20 @@ app.use((req, res, next) => {
     }, () => {
       log(`serving on port ${port}`);
     });
+    return app;
   }
-})();
+};
 
-// Export for Vercel serverless
-export default app;
+// Initialize immediately if not in serverless
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
+  initializeApp();
+}
+
+// Export for Vercel serverless - the app will be initialized on first request
+export default async (req: any, res: any) => {
+  const initializedApp = await initializeApp();
+  return initializedApp(req, res);
+};
 
 // Default export for Vercel
 export default async (req: any, res: any) => {
