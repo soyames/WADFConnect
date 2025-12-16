@@ -5,12 +5,8 @@
   "outputDirectory": "dist/public",
   "rewrites": [
     {
-      "source": "/api/ticket-options",
-      "destination": "/api"
-    },
-    {
       "source": "/api/:path*",
-      "destination": "/api"
+      "destination": "/api/index.js"
     },
     {
       "source": "/(.*)",

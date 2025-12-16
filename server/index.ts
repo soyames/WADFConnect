@@ -98,10 +98,10 @@ app.use((req, res, next) => {
       log(`serving on port ${port}`);
     });
   }
-  
-  // Export app for Vercel serverless
-  return app;
 })();
+
+// Export for Vercel serverless
+export default app;
 
 // Default export for Vercel
 export default async (req: any, res: any) => {
