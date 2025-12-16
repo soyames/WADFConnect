@@ -31,7 +31,7 @@ const mockSessions = [
     scheduledDate: "2026-06-15",
     scheduledTime: "09:00-09:45",
     room: "Main Hall",
-    speaker: { name: "Amara Okonkwo", role: "Lead Designer, Andela" },
+    speaker: { name: "Demo Speaker 1", role: "Lead Designer" },
     averageRating: 4.5,
     totalRatings: 28
   },
@@ -45,7 +45,7 @@ const mockSessions = [
     scheduledDate: "2026-06-15",
     scheduledTime: "10:00-11:00",
     room: "Conference Room A",
-    speaker: { name: "Dr. Ben Adekunle", role: "Professor, University of Lagos" },
+    speaker: { name: "Demo Speaker 2", role: "Innovation Expert" },
     averageRating: 4.8,
     totalRatings: 42
   },
@@ -59,7 +59,7 @@ const mockSessions = [
     scheduledDate: "2026-06-15",
     scheduledTime: "14:00-15:30",
     room: "Workshop Space",
-    speaker: { name: "Chidinma Nwosu", role: "Product Designer, Flutterwave" },
+    speaker: { name: "Demo Speaker 3", role: "Product Designer" },
     averageRating: null,
     totalRatings: 0
   }

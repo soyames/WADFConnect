@@ -20,7 +20,7 @@ DTSTART:${formatDate(startDate)}
 DTEND:${formatDate(endDate)}
 SUMMARY:${session.title}
 DESCRIPTION:${session.description || 'WADF 2026 Session'}
-LOCATION:${session.room || 'Conference Venue, Accra, Ghana'}
+LOCATION:${session.room || 'Conference Venue (Location TBC)'}
 STATUS:CONFIRMED
 SEQUENCE:0
 BEGIN:VALARM
@@ -58,7 +58,7 @@ export function getGoogleCalendarUrl(session: Session): string {
     action: 'TEMPLATE',
     text: session.title,
     details: session.description || 'WADF 2026 Session',
-    location: session.room || 'Conference Venue, Accra, Ghana',
+    location: session.room || 'Conference Venue (Location TBC)',
     dates: `${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}`,
   });
 
@@ -74,7 +74,7 @@ export function getOutlookCalendarUrl(session: Session): string {
     rru: 'addevent',
     subject: session.title,
     body: session.description || 'WADF 2026 Session',
-    location: session.room || 'Conference Venue, Accra, Ghana',
+    location: session.room || 'Conference Venue (Location TBC)',
     startdt: startDate.toISOString(),
     enddt: endDate.toISOString(),
   });

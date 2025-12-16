@@ -57,18 +57,19 @@ import type {
   ProposalEvaluation
 } from "@shared/schema";
 
-type AdminSection = 
-  | "overview" 
-  | "proposals" 
+type AdminSection =
+  | "overview"
+  | "proposals"
   | "evaluations"
-  | "tickets" 
-  | "sessions" 
-  | "sponsorships" 
-  | "users" 
-  | "team" 
-  | "page-visibility" 
-  | "cfp-settings" 
-  | "tasks" 
+  | "tickets"
+  | "sessions"
+  | "sponsorships"
+  | "users"
+  | "team"
+  | "page-visibility"
+  | "conference-settings"
+  | "cfp-settings"
+  | "tasks"
   | "settings";
 
 // Helper function to get admin headers
@@ -115,6 +116,7 @@ export default function Admin() {
     { id: "users", label: "Speakers & Participants", icon: Users },
     { id: "team", label: "Team Members", icon: UserCog },
     { id: "page-visibility", label: "Page Visibility", icon: Eye },
+    { id: "conference-settings", label: "Conference Settings", icon: Settings },
     { id: "cfp-settings", label: "CFP Settings", icon: Megaphone },
     { id: "tasks", label: "Tasks", icon: ListTodo },
     { id: "settings", label: "Settings", icon: Settings },
@@ -167,6 +169,7 @@ export default function Admin() {
           {activeSection === "users" && <UsersSection />}
           {activeSection === "team" && <TeamMembersSection userId={userData.id} />}
           {activeSection === "page-visibility" && <PageVisibilitySection userId={userData.id} />}
+          {activeSection === "conference-settings" && <ConferenceSettingsSection userId={userData.id} />}
           {activeSection === "cfp-settings" && <CfpSettingsSection userId={userData.id} />}
           {activeSection === "tasks" && <TasksSection userId={userData.id} />}
           {activeSection === "settings" && <SettingsSection />}
@@ -2685,6 +2688,183 @@ function PageVisibilitySection({ userId }: { userId: string }) {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Conference Settings Section
+function ConferenceSettingsSection({ userId }: { userId: string }) {
+  const { toast } = useToast();
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["/api/admin/conference-settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/conference-settings", {
+        headers: getAdminHeaders(userId)
+      });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    }
+  });
+
+  const [formData, setFormData] = useState({
+    eventName: "West Africa Design Forum 2026",
+    eventDate: "",
+    eventLocation: "",
+    eventVenue: "",
+    eventDescription: "",
+    isDateConfirmed: false,
+    isLocationConfirmed: false,
+  });
+
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        eventName: settings.eventName || "West Africa Design Forum 2026",
+        eventDate: settings.eventDate || "",
+        eventLocation: settings.eventLocation || "",
+        eventVenue: settings.eventVenue || "",
+        eventDescription: settings.eventDescription || "",
+        isDateConfirmed: settings.isDateConfirmed || false,
+        isLocationConfirmed: settings.isLocationConfirmed || false,
+      });
+    }
+  }, [settings]);
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("PATCH", "/api/admin/conference-settings", data, getAdminHeaders(userId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/conference-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/conference-settings"] });
+      toast({ title: "Conference settings updated" });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate({
+      ...formData,
+      updatedBy: userId
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold font-serif mb-2">Conference Settings</h2>
+        <p className="text-muted-foreground">Manage event date, location, and venue information</p>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            {/* Event Name */}
+            <div className="space-y-2">
+              <Label htmlFor="eventName">Event Name</Label>
+              <Input
+                id="eventName"
+                value={formData.eventName}
+                onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
+                placeholder="West Africa Design Forum 2026"
+              />
+            </div>
+
+            {/* Event Date */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="eventDate">Event Date</Label>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="isDateConfirmed"
+                    checked={formData.isDateConfirmed}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, isDateConfirmed: checked as boolean })
+                    }
+                  />
+                  <label htmlFor="isDateConfirmed" className="text-sm">Date Confirmed</label>
+                </div>
+              </div>
+              <Input
+                id="eventDate"
+                value={formData.eventDate}
+                onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+                placeholder="e.g., June 15-17, 2026 or To Be Confirmed Soon"
+              />
+              <p className="text-xs text-muted-foreground">
+                {formData.isDateConfirmed 
+                  ? "Date is confirmed and will be displayed across the site" 
+                  : "Will show as 'To Be Confirmed Soon' if empty or not confirmed"}
+              </p>
+            </div>
+
+            {/* Event Location */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="eventLocation">Event Location</Label>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="isLocationConfirmed"
+                    checked={formData.isLocationConfirmed}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, isLocationConfirmed: checked as boolean })
+                    }
+                  />
+                  <label htmlFor="isLocationConfirmed" className="text-sm">Location Confirmed</label>
+                </div>
+              </div>
+              <Input
+                id="eventLocation"
+                value={formData.eventLocation}
+                onChange={(e) => setFormData({ ...formData, eventLocation: e.target.value })}
+                placeholder="e.g., Accra, Ghana or To Be Confirmed Soon"
+              />
+            </div>
+
+            {/* Event Venue */}
+            <div className="space-y-2">
+              <Label htmlFor="eventVenue">Event Venue (Optional)</Label>
+              <Input
+                id="eventVenue"
+                value={formData.eventVenue}
+                onChange={(e) => setFormData({ ...formData, eventVenue: e.target.value })}
+                placeholder="e.g., Eko Convention Centre"
+              />
+            </div>
+
+            {/* Event Description */}
+            <div className="space-y-2">
+              <Label htmlFor="eventDescription">Event Description (Optional)</Label>
+              <Textarea
+                id="eventDescription"
+                value={formData.eventDescription}
+                onChange={(e) => setFormData({ ...formData, eventDescription: e.target.value })}
+                placeholder="Brief description of the event"
+                rows={4}
+              />
+            </div>
+
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save Conference Settings"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </form>
     </div>
   );
 }

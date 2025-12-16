@@ -132,6 +132,39 @@ export async function seedTicketOptions() {
 }
 
 /**
+ * Seed default conference settings if none exist
+ */
+export async function seedConferenceSettings() {
+  try {
+    const existingSettings = await storage.getConferenceSettings();
+    
+    if (existingSettings) {
+      console.log('✓ Conference settings already exist');
+      return;
+    }
+
+    console.log('📝 Creating default conference settings...');
+
+    const defaultSettings = {
+      eventName: "West Africa Design Forum 2026",
+      eventDate: "To Be Confirmed Soon",
+      eventLocation: "To Be Confirmed Soon",
+      eventVenue: null,
+      eventDescription: "Premier design conference bringing together designers, innovators, and industry experts from across West Africa.",
+      isDateConfirmed: false,
+      isLocationConfirmed: false,
+    };
+
+    await storage.updateConferenceSettings(defaultSettings);
+    console.log('✅ Successfully created default conference settings');
+
+  } catch (error) {
+    console.error('❌ Error seeding conference settings:', error);
+    throw error;
+  }
+}
+
+/**
  * Initialize all seed data
  */
 export async function initializeSeedData() {
@@ -139,6 +172,7 @@ export async function initializeSeedData() {
   
   try {
     await seedTicketOptions();
+    await seedConferenceSettings();
     console.log('\n✅ Seed data initialization complete\n');
   } catch (error) {
     console.error('\n❌ Seed data initialization failed:', error);

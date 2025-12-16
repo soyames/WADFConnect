@@ -41,6 +41,8 @@ import {
   type InsertTeamMember,
   type CfpSetting,
   type InsertCfpSetting,
+  type ConferenceSetting,
+  type InsertConferenceSetting,
   type TicketOption,
   type InsertTicketOption,
   type SponsorshipPackage,
@@ -815,6 +817,41 @@ export class MongoDBStorage implements IStorage {
       return convertDoc(result);
     } else {
       const result = await db.collection('cfp_settings').insertOne(mongoUpdates);
+      return convertDoc({ _id: result.insertedId, ...mongoUpdates });
+    }
+  }
+
+  // Conference Settings
+  async getConferenceSettings(): Promise<ConferenceSetting | undefined> {
+    const db = await getDatabase();
+    const doc = await db.collection('conference_settings').findOne();
+    return convertDoc(doc);
+  }
+
+  async updateConferenceSettings(updates: Partial<ConferenceSetting>): Promise<ConferenceSetting> {
+    const db = await getDatabase();
+    const existing = await this.getConferenceSettings();
+    const mongoUpdates: any = { ...updates, updatedAt: new Date() };
+    delete mongoUpdates.id;
+    
+    if (updates.updatedBy) {
+      mongoUpdates.updatedBy = toObjectId(updates.updatedBy);
+    }
+    
+    if (existing) {
+      const result = await db.collection('conference_settings').findOneAndUpdate(
+        { _id: toObjectId(existing.id) },
+        { $set: mongoUpdates },
+        { returnDocument: 'after' }
+      );
+      return convertDoc(result);
+    } else {
+      const result = await db.collection('conference_settings').insertOne({
+        ...mongoUpdates,
+        eventName: mongoUpdates.eventName || "West Africa Design Forum 2026",
+        isDateConfirmed: mongoUpdates.isDateConfirmed ?? false,
+        isLocationConfirmed: mongoUpdates.isLocationConfirmed ?? false,
+      });
       return convertDoc({ _id: result.insertedId, ...mongoUpdates });
     }
   }

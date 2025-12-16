@@ -18,6 +18,7 @@ import {
   insertPostCommentSchema,
   insertTeamMemberSchema,
   insertCfpSettingSchema,
+  insertConferenceSettingSchema,
   insertTicketOptionSchema,
   insertSponsorshipPackageSchema,
   insertPageSettingSchema,
@@ -983,6 +984,33 @@ Disallow: /`);
   // Public CFP Settings (no auth required)
   app.get("/api/cfp-settings", async (req, res) => {
     const settings = await storage.getCfpSettings();
+    res.json(settings || null);
+  });
+
+  // Admin routes - Conference Settings
+  app.get("/api/admin/conference-settings", requireAdmin, async (req, res) => {
+    const settings = await storage.getConferenceSettings();
+    res.json(settings || null);
+  });
+
+  app.post("/api/admin/conference-settings", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertConferenceSettingSchema.parse(req.body);
+      const settings = await storage.updateConferenceSettings(validatedData);
+      res.json(settings);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/conference-settings", requireAdmin, async (req, res) => {
+    const settings = await storage.updateConferenceSettings(req.body);
+    res.json(settings);
+  });
+
+  // Public Conference Settings (no auth required)
+  app.get("/api/conference-settings", async (req, res) => {
+    const settings = await storage.getConferenceSettings();
     res.json(settings || null);
   });
 

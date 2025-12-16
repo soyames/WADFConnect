@@ -661,3 +661,25 @@ export const insertCfpSettingSchema = createInsertSchema(cfpSettings).omit({
 
 export type InsertCfpSetting = z.infer<typeof insertCfpSettingSchema>;
 export type CfpSetting = typeof cfpSettings.$inferSelect;
+
+// Conference Settings (event date, location, etc.)
+export const conferenceSettings = pgTable("conference_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventName: text("event_name").notNull().default("West Africa Design Forum 2026"),
+  eventDate: text("event_date"), // e.g., "June 15-17, 2026" or "To Be Confirmed Soon"
+  eventLocation: text("event_location"), // e.g., "Accra, Ghana" or "To Be Confirmed Soon"
+  eventVenue: text("event_venue"), // e.g., "Eko Convention Centre"
+  eventDescription: text("event_description"),
+  isDateConfirmed: boolean("is_date_confirmed").notNull().default(false),
+  isLocationConfirmed: boolean("is_location_confirmed").notNull().default(false),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertConferenceSettingSchema = createInsertSchema(conferenceSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertConferenceSetting = z.infer<typeof insertConferenceSettingSchema>;
+export type ConferenceSetting = typeof conferenceSettings.$inferSelect;
