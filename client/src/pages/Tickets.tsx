@@ -50,13 +50,9 @@ export default function Tickets() {
 
       if (currentUser) {
         userEmail = currentUser.email || email;
-        const userRes = await fetch(`/api/users/firebase/${currentUser.uid}`);
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          userId = userData.id;
-        }
+        userId = currentUser.id;
       } else {
-        // For free tickets, create user without Firebase auth
+        // For free tickets, create user account
         if (isFreeTicket) {
           const createUserRes = await fetch("/api/users", {
             method: "POST",

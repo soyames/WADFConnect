@@ -13,7 +13,6 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   password: text("password"), // Hashed password for session auth
   role: text("role").notNull().default("attendee"), // attendee, speaker, sponsor, organizer, admin
-  firebaseUid: text("firebase_uid").unique(), // Keep for backward compatibility
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

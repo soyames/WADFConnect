@@ -212,14 +212,6 @@ Disallow: /`);
     res.json(user);
   });
 
-  app.get("/api/users/firebase/:uid", async (req, res) => {
-    const user = await storage.getUserByFirebaseUid(req.params.uid);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res.json(user);
-  });
-
   app.patch("/api/users/:id/role", async (req, res) => {
     const { role } = req.body;
     if (!role) {
@@ -1012,69 +1004,6 @@ Disallow: /`);
   app.get("/api/conference-settings", async (req, res) => {
     const settings = await storage.getConferenceSettings();
     res.json(settings || null);
-  });
-
-  // ONE-TIME ADMIN CREATION ENDPOINT (REMOVE AFTER USE!)
-  app.get("/api/create-admin", async (req, res) => {
-    try {
-      const secret = req.query.secret as string;
-      const EXPECTED_SECRET = process.env.ADMIN_CREATE_SECRET || "create-admin-2026";
-      
-      if (secret !== EXPECTED_SECRET) {
-        return res.status(403).json({ error: "Unauthorized - Invalid secret" });
-      }
-
-      const ADMIN_EMAIL = "admin@wadf.org";
-      const ADMIN_PASSWORD = "WADF@Admin2026!";
-      const ADMIN_NAME = "WADF Administrator";
-
-      // Check if admin already exists
-      const existingAdmin = await storage.getUserByEmail(ADMIN_EMAIL);
-      
-      if (existingAdmin) {
-        // Update password
-        const bcrypt = await import("bcryptjs");
-        const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
-        
-        await storage.updateUserRole(existingAdmin.id, "admin");
-        // Note: We'd need to add updateUserPassword method, but for now just return success
-        
-        return res.json({
-          success: true,
-          message: "Admin user already exists with role set to admin",
-          email: ADMIN_EMAIL,
-          password: ADMIN_PASSWORD,
-          note: "IMPORTANT: Remove this endpoint from routes.ts after use!"
-        });
-      } else {
-        // Create new admin
-        const bcrypt = await import("bcryptjs");
-        const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
-        
-        await storage.createUser({
-          email: ADMIN_EMAIL,
-          name: ADMIN_NAME,
-          password: hashedPassword,
-          role: "admin",
-          firebaseUid: null
-        });
-        
-        return res.json({
-          success: true,
-          message: "Admin user created successfully!",
-          email: ADMIN_EMAIL,
-          password: ADMIN_PASSWORD,
-          loginUrl: "https://wadfc-onnect.vercel.app/login",
-          note: "IMPORTANT: Remove this endpoint from routes.ts after use!"
-        });
-      }
-    } catch (error: any) {
-      console.error("Error creating admin:", error);
-      return res.status(500).json({ 
-        error: "Failed to create admin",
-        details: error.message 
-      });
-    }
   });
 
   // Public Ticket Options (no auth required) - for ticket purchase page
