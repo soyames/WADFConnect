@@ -41,3 +41,4 @@ Thumbs.db
 *.md
 !README.md
 .vercel
+.env*.local

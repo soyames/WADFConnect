@@ -1,4 +1,4 @@
-import { mongoStorage as storage } from "./mongodb-storage";
+import { storage } from "./storage";
 import type { InsertTicketOption } from "@shared/schema";
 
 /**

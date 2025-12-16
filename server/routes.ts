@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { mongoStorage as storage } from "./mongodb-storage";
+import { storage } from "./storage";
 import { 
   insertUserSchema,
   insertTicketSchema,
