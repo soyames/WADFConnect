@@ -244,13 +244,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div>
               <h3 className="font-semibold mb-3">Contact</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Lagos, Nigeria</li>
                 <li>
                   <a href="mailto:hello@wadf.org" className="hover:text-foreground transition-colors">
                     hello@wadf.org
                   </a>
                 </li>
-                <li>June 15-17, 2026</li>
               </ul>
             </div>
           </div>
