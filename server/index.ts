@@ -113,16 +113,3 @@ export default async (req: any, res: any) => {
   const initializedApp = await initializeApp();
   return initializedApp(req, res);
 };
-
-// Default export for Vercel
-export default async (req: any, res: any) => {
-  const appInstance = await (async () => {
-    const { registerRoutes } = await import("./routes");
-    const express = (await import("express")).default;
-    const app = express();
-    await registerRoutes(app);
-    return app;
-  })();
-  
-  return appInstance(req, res);
-};

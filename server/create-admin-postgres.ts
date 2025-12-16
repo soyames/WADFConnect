@@ -40,8 +40,7 @@ async function createAdmin() {
         email: ADMIN_EMAIL,
         name: ADMIN_NAME,
         password: hashedPassword,
-        role: "admin",
-        firebaseUid: null
+        role: "admin"
       });
       
       console.log(`✅ Admin user created successfully!`);
